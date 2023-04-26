@@ -71,3 +71,6 @@ AFC_1=Y
 # Dump config
 #DumpBuffer=Y
 #DumpFile=./LORA_dump
+
+# GPS USB-Serial Output
+#GPSUSBSerial=Y

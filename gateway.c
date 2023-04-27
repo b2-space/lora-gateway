@@ -44,6 +44,7 @@
 #include "habpack.h"
 #include "udpclient.h"
 #include "lifo_buffer.h"
+#include "gps_usb_ser.h"
 
 #define VERSION	"V1.10.0"
 bool run = TRUE;
@@ -2137,6 +2138,10 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTClient", Config.MQTTClient, sizeof(Config.MQTTClient), NULL);
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
+    // GPSUSBSerial
+    RegisterConfigBoolean(MainSection, -1, "EnableGPSUSBSerial", &Config.EnableGPSUSBSerial, NULL);
+    RegisterConfigBoolean(MainSection, -1, "GPSUSBSerialPort", &Config.GPSUSBSerialPort, NULL);
+
 
     for (Channel = 0; Channel <= 1; Channel++)
     {
@@ -2810,6 +2815,23 @@ int main( int argc, char **argv )
             fprintf( stderr, "Error creating Network thread\n" );
             return 1;
         }
+    }
+
+    if (Config.EnableGPSUSBSerial) {
+        LogMessage( "GPS USB Serial requested\n" );
+        if (Config.GPSUSBSerialPort) {
+            LogMessage( "GPS USB Serial Port set\n" );
+            if (connectUSB(Config.GPSUSBSerialPort, 9600)) {
+                LogMessage( "GPS USB Serial Port penned\n" );
+            }
+            else {
+                LogMessage( "GPS USB Serial Port not openned\n" );
+            }
+        }
+        else {
+            LogMessage( "GPS USB Serial Port not set\n" );
+        }
+
     }
 
     // Initializes the structure used for storing calling mode settings

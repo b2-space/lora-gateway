@@ -13,3 +13,13 @@
 #include "gps_usb_ser.h"
 
 volatile int usbPortPtr;
+
+int connectUSB(char* usbPort, int baudRate) {
+    usbPortPtr = serialOpen(usbPort, baudRate);
+    return usbPortPtr;
+}
+
+void disconnectUSB() {
+    serialClose(usbPortPtr);
+}
+

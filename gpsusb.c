@@ -23,9 +23,7 @@ volatile int fd;
 
 
 int connectUSB(char* portname, int baudRate) {
-    LogMessage("Attempting to open %s %d\n", portname, baudRate);
     fd = serialOpen(portname, baudRate);
-    LogMessage("Got fd value %d\n", fd);
     return fd;
 }
 
@@ -70,9 +68,7 @@ int sendGpsUsb(received_t *t ) {
 
 void *GpsUsbLoop( void *some_void_ptr ) {
     if (Config.EnableGPSUSB) {
-        LogMessage( "GPS USB Serial requested\n" );
         if (Config.GPSUSBPort) {
-            LogMessage( "GPS USB Serial Port set\n" );
             if (connectUSB(Config.GPSUSBPort, 9600) > 0) {
                 LogMessage( "GPS USB Serial Port openned\n" );
                 received_t *dequeued_telemetry_ptr;

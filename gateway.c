@@ -2836,8 +2836,6 @@ int main( int argc, char **argv )
 
         lifo_buffer_init(&GPS_USB_Upload_Buffer, 1024);
 
-        LogMessage("USB port: %s\n", Config.GPSUSBPort);
-
         if ( pthread_create (&GpsUsbThread, NULL, GpsUsbLoop, NULL))
         {
             printf( stderr, "Error creating GPS USB thread\n" );

@@ -8,10 +8,9 @@ desktop.ini
 *.ack
 *.rjh
 gateway
+gateway.txt
 telemetry.txt
 packets.txt
-gateway.txt
-gateway.txt.old
 ssdv
 gateway-mode0.txt
 test.txt

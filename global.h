@@ -155,8 +155,8 @@ struct TConfig
 	char MQTTPass[32];
 	char MQTTClient[16];
 	char MQTTTopic[128];
-	int EnableGPSUSBSerial;
-	char GPSUSBSerialPort[30];
+	int EnableGPSUSB;
+	char GPSUSBPort[30];
 };
 
 typedef struct {

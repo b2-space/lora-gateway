@@ -44,7 +44,7 @@
 #include "habpack.h"
 #include "udpclient.h"
 #include "lifo_buffer.h"
-#include "gps_usb_ser.h"
+#include "gpsusb.h"
 
 #define VERSION	"V1.10.0"
 bool run = TRUE;
@@ -196,6 +196,7 @@ struct TBinaryPacket {
 #pragma pack(pop)
 
 lifo_buffer_t MQTT_Upload_Buffer;
+lifo_buffer_t GPS_USB_Upload_Buffer;
 
 // Create pipes for inter proces communication 
 // GLOBAL AS CALLED FROM INTERRRUPT
@@ -210,6 +211,8 @@ WINDOW *mainwin=NULL;		// Curses window
 // Create a structure for saving calling mode settings
 rx_metadata_t callingModeSettings[2];
 
+// Flag to indicate usb connection is open
+int gpsUsbOpen = 0;
 
 void CloseDisplay( WINDOW * mainwin )
 {
@@ -1150,6 +1153,18 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
                     memcpy(queueReceived, Received, sizeof(received_t));
                     /* Push pointer onto upload queue */
                     lifo_buffer_push(&MQTT_Upload_Buffer, (void *)queueReceived);
+                }
+            }
+
+            if (Config.EnableGPSUSB)
+            {
+                // Add to GPS USB upload queue
+                received_t *queueReceived = malloc(sizeof(received_t));
+                if(queueReceived != NULL)
+                {
+                    memcpy(queueReceived, Received, sizeof(received_t));
+                    /* Push pointer onto upload queue */
+                    lifo_buffer_push(&GPS_USB_Upload_Buffer, (void *)queueReceived);
                 }
             }
 			
@@ -2139,8 +2154,8 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
     // GPSUSBSerial
-    RegisterConfigBoolean(MainSection, -1, "EnableGPSUSBSerial", &Config.EnableGPSUSBSerial, NULL);
-    RegisterConfigBoolean(MainSection, -1, "GPSUSBSerialPort", &Config.GPSUSBSerialPort, NULL);
+    RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBPort", &Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
 
 
     for (Channel = 0; Channel <= 1; Channel++)
@@ -2641,7 +2656,7 @@ int main( int argc, char **argv )
     int ch;
     int LoopPeriod, MSPerLoop;
 	int Channel;
-    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread;
+    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread, GpsUsbThread;
 	struct TServerInfo JSONInfo, TelnetInfo, DataportInfo, ChatportInfo;
 
 	atexit(bye);
@@ -2817,19 +2832,16 @@ int main( int argc, char **argv )
         }
     }
 
-    if (Config.EnableGPSUSBSerial) {
-        LogMessage( "GPS USB Serial requested\n" );
-        if (Config.GPSUSBSerialPort) {
-            LogMessage( "GPS USB Serial Port set\n" );
-            if (connectUSB(Config.GPSUSBSerialPort, 9600)) {
-                LogMessage( "GPS USB Serial Port penned\n" );
-            }
-            else {
-                LogMessage( "GPS USB Serial Port not openned\n" );
-            }
-        }
-        else {
-            LogMessage( "GPS USB Serial Port not set\n" );
+    if (Config.EnableGPSUSB) {
+
+        lifo_buffer_init(&GPS_USB_Upload_Buffer, 1024);
+
+        LogMessage("USB port: %s\n", Config.GPSUSBPort);
+
+        if ( pthread_create (&GpsUsbThread, NULL, GpsUsbLoop, NULL))
+        {
+            printf( stderr, "Error creating GPS USB thread\n" );
+            return 1;
         }
 
     }
@@ -2992,6 +3004,11 @@ int main( int argc, char **argv )
 		pthread_join( SSDVThread, NULL );
 		LogMessage( "SSDV thread closed\n" );
 	}
+
+    if (gpsUsbOpen) {
+        LogMessage( "Closing GPS USB Port\n" );
+        disconnectUSB();
+    }
 	
     pthread_mutex_destroy( &var );
 

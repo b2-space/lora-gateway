@@ -74,3 +74,4 @@ AFC_1=Y
 
 # GPS USB-Serial Output
 #EnableGPSUSBSerial=Y
+#GPSUSBPort=/dev/ttyUSB0

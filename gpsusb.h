@@ -1,4 +1,4 @@
-#ifndef MGPS_USB_SER_H_
+#ifndef GPS_USB_SER_H_
     void connectSerial(char* serialPort, int baudRate);
     void disconnectUSB();
     void sendUSB(char* latLongAz);

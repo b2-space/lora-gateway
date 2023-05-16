@@ -9,6 +9,7 @@
 #include <fcntl.h> 
 #include <termios.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <wiringSerial.h>
 
@@ -38,63 +39,144 @@ void sendUSB(char* latLongAz) {
 }
 
 char* nmeaTimestamp(char *datetime) {
-    int i = 0;
 
-    char tokens[3][64] = {"","",""};
+   char* timeStamp = calloc(64, 1);
+   char *rest = datetime;
+   char *timeToken;
 
-   char* token = strtok(datetime, ":");
-   while (token != NULL) {
-	tokens[i] = token;
-        i++;
-        token = strtok(NULL, ":");
+   while ((timeToken = strtok_r(rest, ":", &rest))) {
+        strcat(timeStamp, timeToken);
    }
-   char* timeStamp = malloc(64);
-   sprintf(timeStamp, "%2d%2d%2d.00,\0",token[0],token[1],token[2]);
    return timeStamp;
 }
 
+char *nmeaLatitude(char *latitude) {
+
+    char *ns = calloc(2,1);
+    float latitudeValue = atof(latitude);
+
+    if (latitudeValue < 0.00001) {
+        ns =  "S";
+        latitudeValue *= -1.0;
+    }
+    else {
+        ns = "N";
+    }
+
+    float fLat = floor(latitudeValue);
+    float minutesLat = (latitudeValue - fLat) * 60.00;
+
+    //LogMessage( "Called nmeaLatitude with Latitude %s, converted to: %09.4f, %s\n" , latitude, (fLat*100.0) + minutesLat, ns); 
+    char *ret = calloc(32, 1);
+    sprintf(ret, "%09.4f,%s,", (fLat*100.0) + minutesLat, ns);
+    return ret;
+}
+
+char *nmeaLongitude(char *longitude) {
+
+    char *ew = calloc(2,1);
+    float longitudeValue = atof(longitude);
+
+    if (longitudeValue < 0.00001) {
+        ew =  "W";
+        longitudeValue *= -1.0;
+    }
+    else {
+        ew = "E";
+    }
+
+    float fLong = floor(longitudeValue);
+    float minutesLong = (longitudeValue - fLong) * 60.00;
+
+    //LogMessage( "Called nmeaLongitude with Longitude %s, converted to: %010.4f, %s\n" , longitude, (fLong*100.0) + minutesLong, ew); 
+    char *ret = calloc(32, 1);
+    sprintf(ret, "%010.4f,%s,", (fLong*100.0) + minutesLong, ew);
+    return ret;
+}
+
+char *nmeaAltitude(char *altitude) {
+
+    char *ret = calloc(32, 1);
+    sprintf(ret, "%.1f,", atof(altitude));
+    return ret;
+}
+
+// we are generating the format (without spaces):
+// $GPGGA, 125546.00, 5228.0434, N, 00201.2780, W, 1, 13, 1.00, 201.0, M, , , , 0000*40
+//  given: $$B2S-INDRA-1,211,12:55:46,52.46739,-2.02130,201,10,0,0*F0D0
 int sendNmeaUsb(received_t *t) {
+    //LogMessage( "Parsing: %s\n" , t->Message);
 
     int i = 0;
 
-    char tokens[20][64] = {"","","","","","","","","","","","","","","","","","","",""};
+    char *nmeaString = calloc(256, 1);
+    char *rest = t->Message;
+    char *token;
+    strcat(nmeaString, "$GPGGA,");
+    bool valid = true;
 
-    char* token = strtok(t->Message, ",");
-
-    while (token != NULL) {
-	tokens[i] = token;
+    while (valid && (token = strtok_r(rest, ",", &rest))) {
+        switch(i) {
+            case 0:
+            case 1:
+            case 6:
+            case 7:
+            case 8:
+                //LogMessage( "Value of i: %d, token: %s\n" , i, token);
+                break;
+            case 2:
+                strcat(nmeaString, nmeaTimestamp(token));
+                strcat(nmeaString, ".00,"); // 181908.00
+                break;
+            case 3:
+    		//LogMessage( "latitude token %s\n" , token);
+                if (strcmp(token, "0.00000") == 0) {
+		    valid = false;
+                    //LogMessage("zero latitude found\n");
+                    break;
+                }
+                strcat(nmeaString, nmeaLatitude(token));
+                break;
+            case 4:
+                strcat(nmeaString, nmeaLongitude(token));// 07044.3966270,W
+                strcat(nmeaString, "1,");                    // Quality
+                strcat(nmeaString, "13,");                   // Number of satllites
+                strcat(nmeaString, "1.00,");                 // HDOP
+                break;
+            case 5:
+                strcat(nmeaString, nmeaAltitude(token)); // 495.144,M
+                strcat(nmeaString, ",");  // Geoidal Separation
+                strcat(nmeaString, ",");            // Age
+                strcat(nmeaString, ",0000");    // Correction
+                break;
+        }
         i++;
-        token = strtok(NULL, ",");
     }
 
-    // we are generating the format:
-    // $GPGGA,181908.00,3404.7041778,N,07044.3966270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40
+    // Calculate and append checksum 
+    int checksum = 0; 
+    for (int i = 1; i < strlen(nmeaString); i++) { 
+        checksum ^= nmeaString[i]; 
+    } 
+    sprintf(nmeaString + strlen(nmeaString), "*%02X", checksum);
 
-    char nmeaString[256] = "";
-    strcat(nmeaString, "$GPGGA,");
-    strcat(nmeaString, nmeaTimestamp(tokens[0]); // 181908.00
-    strcat(nmeaString, nmeaLatitude(tokens[3])); // 3404.7041778,N
-    strcat(nmeaString, nmeaLongitude(tokens[4]));// 07044.3966270,W
-    strcat(nmeaString, "4,");                    // Quality
-    strcat(nmeaString, "13,");                   // Number of satllites
-    strcat(nmeaString, "1.00,");                 // HDOP
-    strcat(nmeaString, nmeaAltitude(tokens[5])); // 495.144,M
-    strcat(nmeaString, "0.0,M,");  // Geoidal Separation
-    strcat(nmeaString, "0,");            // Age
-    strcat(nmeaString, "0,");    // Correction
-    strcat(nmeaString, genCRC(nmeaString));
-    sendUSB(nmeaString);
-}`
+    strcat(nmeaString, "\r\n");
+    if (valid) {
+        sendUSB(nmeaString);
+    }
+    return i;
+}
 
 int sendGpsUsb(received_t *t ) {
-    char* token = strtok(t->Message, ",");
+
     char gpsStr[64] = "";
+    char *token;
 
     int i = 0;
  
     // Keep printing tokens while one of the
     // delimiters present in str[].
-    while (token != NULL) {
+    while ((token = strtok(t->Message, ","))) {
         switch(i) {
             case 3:
             case 4:
@@ -107,7 +189,6 @@ int sendGpsUsb(received_t *t ) {
             break;
         }
         i++;
-        token = strtok(NULL, ",");
     }
 
     sendUSB(gpsStr);
@@ -119,7 +200,7 @@ void *GpsUsbLoop( void *some_void_ptr ) {
     if (Config.EnableGPSUSB) {
         if (Config.GPSUSBPort) {
             if (connectUSB(Config.GPSUSBPort, 9600) > 0) {
-                LogMessage( "GPS USB Serial Port openned\n" );
+                //LogMessage( "GPS USB Serial Port openned\n" );
                 received_t *dequeued_telemetry_ptr;
 
                 // Keep looping until the parent quits
@@ -129,7 +210,7 @@ void *GpsUsbLoop( void *some_void_ptr ) {
         
                     if(dequeued_telemetry_ptr != NULL)
                     {
-                        if(sendGpsUsb(dequeued_telemetry_ptr ))
+                        if(sendNmeaUsb(dequeued_telemetry_ptr ))
                         {
                             free(dequeued_telemetry_ptr);
                         }
@@ -151,11 +232,11 @@ void *GpsUsbLoop( void *some_void_ptr ) {
 	        }
             }
             else {
-                LogMessage( "GPS USB Serial Port not openned\n" );
+                //LogMessage( "GPS USB Serial Port not openned\n" );
             }
         }
         else {
-            LogMessage( "GPS USB Serial Port not set\n" );
+            //LogMessage( "GPS USB Serial Port not set\n" );
         }
 
     }

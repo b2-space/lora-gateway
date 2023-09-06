@@ -73,5 +73,5 @@ AFC_1=Y
 #DumpFile=./LORA_dump
 
 # GPS USB-Serial Output
-#EnableGPSUSBSerial=Y
+#EnableGPSUSB=Y
 #GPSUSBPort=/dev/ttyUSB0

@@ -97,7 +97,7 @@ char *nmeaLongitude(char *longitude) {
 char *nmeaAltitude(char *altitude) {
 
     char *ret = calloc(32, 1);
-    sprintf(ret, "%.1f,", atof(altitude));
+    sprintf(ret, "%.1f,M,", atof(altitude));
     return ret;
 }
 

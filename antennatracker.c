@@ -18,6 +18,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <math.h>
+#include <time.h>
 
 #include "antennatracker.h"
 #include "global.h"
@@ -43,6 +44,8 @@ static TPosition gateway_position;
 static bool gateway_position_rx = false;
 static TPosition object_position[GW_NUM_CHANNELS];
 static bool object_position_rx[GW_NUM_CHANNELS] = {false, false};
+
+#define TRACKING_ANGLES_FILE "tracking_angles.txt"
 
 // Function to calculate the distance between two points considering Earth's curvature
 static double calculate_distance(double lat1, double lon1, double lat2, double lon2) {
@@ -112,10 +115,30 @@ void anttrack_set_object_position(double lat, double lon, double alt, unsigned i
             double elevation = calculate_elevation(gateway_position.lat, gateway_position.lon, gateway_position.alt,
                 object_position[channel].lat, object_position[channel].lon, object_position[channel].alt);
             LogMessage("AntennaTracker pos rx ch %d: lat %.3f lon %.3f alt %.1f\n", channel, lat, lon, alt);
-            LogMessage("-Horizontal Distance: %.2f meters\n", distance);
-            LogMessage("-3D Distance: %.2f meters\n", distance_3d);
-            LogMessage("-Bearing angle (azimuth): %.2f degrees\n", bearing);
-            LogMessage("-Elevation angle: %.2f degrees\n", elevation);
+            LogMessage("-Track Info: Dist: %.0fm", distance);
+            LogMessage(", 3D Dist: %.0fm", distance_3d);
+            LogMessage(", azimuth: %.0fº", bearing);
+            LogMessage(", elevation: %.0fº\n", elevation);
+            
+            // Save to file
+            FILE *fp;
+
+            if ( ( fp = fopen( TRACKING_ANGLES_FILE, "at" ) ) != NULL )
+            {
+                time_t now;
+                struct tm *tm;
+
+                now = time( 0 );
+                tm = localtime( &now );
+
+                fprintf( fp, "%02d:%02d:%02d - Track Info: Dist: %.0fm"
+                ", 3D Dist: %.0fm"
+                ", azimuth: %.0fº"
+                ", elevation: %.0fº\n",
+                tm->tm_hour, tm->tm_min, tm->tm_sec,
+                distance, distance_3d, bearing, elevation);
+                fclose( fp );
+            }
         }
     }
 }

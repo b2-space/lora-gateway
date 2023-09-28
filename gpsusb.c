@@ -232,12 +232,11 @@ void *GpsUsbLoop( void *some_void_ptr ) {
 	        }
             }
             else {
-                //LogMessage( "GPS USB Serial Port not openned\n" );
+                LogMessage( "GPS USB Serial Port not openned\n");
             }
         }
         else {
-            //LogMessage( "GPS USB Serial Port not set\n" );
+            LogMessage( "GPS USB Serial Port not set\n");
         }
-
     }
 }

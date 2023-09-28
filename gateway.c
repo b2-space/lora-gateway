@@ -45,6 +45,7 @@
 #include "udpclient.h"
 #include "lifo_buffer.h"
 #include "gpsusb.h"
+#include "antennatracker.h"
 
 #define VERSION	"V1.10.0"
 bool run = TRUE;
@@ -1133,6 +1134,8 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
             *endmessage = '\0';
 
 			LogTelemetryPacket(Channel, startmessage);
+
+            anttrack_set_object_position(42.21582380106971, -3.297792075531931, 26000.0, Channel);
 
             ProcessLineUKHAS(Channel, startmessage);
 			

@@ -1135,7 +1135,7 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
 
 			LogTelemetryPacket(Channel, startmessage);
 
-            anttrack_set_object_position(42.21582380106971, -3.297792075531931, 26000.0, Channel);
+            anttrack_set_object_telemetry(startmessage, Channel);
 
             ProcessLineUKHAS(Channel, startmessage);
 			

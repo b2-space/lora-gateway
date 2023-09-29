@@ -2160,6 +2160,14 @@ void LoadConfigFile(void)
     RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBPort", &Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
 
+    // AntennaTracker
+    Config.EnableAntennaTracker = false;
+	*Config.AntTrackTelemetryParse = '\0';
+	Config.AntTrackDebug = false;
+    RegisterConfigBoolean(MainSection, -1, "EnableAntennaTracker", &Config.EnableAntennaTracker, NULL);
+    RegisterConfigString(MainSection, -1, "AntTrackTelemetryParse", &Config.AntTrackTelemetryParse, sizeof(Config.GPSUSBPort), NULL);
+    RegisterConfigBoolean(MainSection, -1, "AntTrackDebug", &Config.AntTrackDebug, NULL);
+    RegisterConfigBoolean(MainSection, -1, "AntTrackLog", &Config.AntTrackLog, NULL);
 
     for (Channel = 0; Channel <= 1; Channel++)
     {

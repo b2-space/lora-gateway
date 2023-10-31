@@ -1135,7 +1135,9 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
 
 			LogTelemetryPacket(Channel, startmessage);
 
-            anttrack_set_object_telemetry(startmessage, Channel);
+            if (Config.EnableAntennaTracker) {
+                anttrack_set_object_telemetry(startmessage, Channel);
+            }
 
             ProcessLineUKHAS(Channel, startmessage);
 			

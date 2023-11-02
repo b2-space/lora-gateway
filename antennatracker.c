@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <time.h>
+#include <gps.h>
 
 #include "antennatracker.h"
 #include "global.h"
@@ -28,6 +29,8 @@
 #define RAD_TO_DEG (180.0 / M_PI)
 #define DEG_TO_RAD (M_PI / 180.0)
 #define EARTH_RADIUS 6371000 // Earth's radius in meters
+
+#define DEFAULT_GPSD_PORT   "2947"
 
 typedef struct {
     double lat;
@@ -44,6 +47,8 @@ static TPosition gateway_position;
 static bool gateway_position_rx = false;
 static TPosition object_position[GW_NUM_CHANNELS];
 static bool object_position_rx[GW_NUM_CHANNELS] = {false, false};
+
+extern int anttrack_stop;
 
 #define TRACKING_ANGLES_FILE "tracking_angles.txt"
 
@@ -168,4 +173,49 @@ void anttrack_set_object_telemetry(char *telemetry, unsigned int channel) {
         alt = alt_int;
         anttrack_set_object_position(lat, lon, alt, channel);
     }
+}
+
+void *anttrack_loop( void *void_ptr ) {
+    struct gps_data_t gps_data;
+    int result;
+
+    // Open a connection to the GPSD daemon
+    result = gps_open("localhost", DEFAULT_GPSD_PORT, &gps_data);
+    if (result != 0) {
+        LogError("Error opening GPSD connection: ", gps_errstr(result));
+    } else {
+        (void) gps_stream(&gps_data, WATCH_ENABLE | WATCH_JSON, NULL);
+        while (!anttrack_stop) {
+            // Wait 5s for GPS data
+            if (gps_waiting(&gps_data, 5000000)) {
+                // Request the current GPS data
+                result = gps_read(&gps_data, NULL, 0);
+                if (result < 0) {
+                    LogError("Error reading GPS data: ", gps_errstr(result));
+                } else if (result > 0){
+                    // Check if latitude and longitude data has been received
+                    if ((gps_data.set & TIME_SET) && (gps_data.set & LATLON_SET) && (gps_data.set & ALTITUDE_SET) &&
+                        (gps_data.fix.mode == MODE_2D || gps_data.fix.mode == MODE_3D)) {
+                        gps_data.set = 0u;
+                        // Extract the latitude, longitude, and altitude from the GPS data
+                        double latitude = gps_data.fix.latitude;
+                        double longitude = gps_data.fix.longitude;
+                        double altitude = gps_data.fix.altitude;
+                        // Store it as new gateway position
+                        if (Config.AntTrackDebug) {
+                            LogMessage("Gateway GPS position from Dongle\n");
+                        }
+                        anttrack_set_gateway_position(latitude, longitude, altitude);
+                    }
+                }
+            } else if (Config.AntTrackDebug) {
+                LogMessage("gps_waiting expired 5s\n");
+            }
+        }
+    }
+
+    // Close the connection to the GPSD daemon
+    gps_close(&gps_data);
+
+    return NULL;
 }

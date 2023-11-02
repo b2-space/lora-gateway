@@ -237,7 +237,21 @@ There are currently two types of uplink supported:
 	-	Uplink of messages from the "SMSFolder" folder.  For this to work, "SMSFolder" has to be defined and present.  The gateway will then check for "*.sms" files in that folder.
 	-	Uplink of SSD packet re-send requests.  The gateway looks for an "uplink.txt" file in the gateway folder.  The file is created by an external Python script (supplied) which interrogates the SSDV server.
 
+Antenna Tracker
+===============
 
+Antenna Tracker module computes azimuth and elevation angles from the gateway position to the position received from telemetry.
+
+For the gateway position it starts with the lat, lon, alt defined in gateway.txt.
+If a USB Dongle is connected, it uses updates the gateway position with that data.
+
+Once a new telemetry message is received, it calculates the angles and shows them in the display as well as in a text file.
+The expected telemetry string is *lat,lon,alt* as in the standard TTGO message (an adaptable telemetry string is yet TBD).
+
+See configuration options in gateway-sample.txt for enabling the module, the debug and the logging.
+
+Dependencies:
+- Install gpslib with *sudo apt install libgps-dev*.
 
 Calling Mode
 ============
@@ -313,6 +327,14 @@ Many thanks to David Brooke for coding this feature and the AFC.
 
 Change History
 ==============
+
+## 02/11/2023 - V1.11.0
+
+	GPSUSB NMEA bug fixed
+	Antenna Tracker for azimuth elevation angles
+	GPSD daemon instructions for system time sync
+	Antenna Tracker using GPSD data for mobile station
+
 
 ## 13/10/2022 - V1.9.6
 

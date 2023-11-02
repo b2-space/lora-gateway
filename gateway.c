@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.10.0"
+#define VERSION	"V1.11.0"
 bool run = TRUE;
 
 // RFM98
@@ -207,6 +207,8 @@ int ssdv_pipe_fd[2];
 // GLOBAL AS CALLED FROM INTERRRUPT
 thread_shared_vars_t stsv;
 
+
+
 WINDOW *mainwin=NULL;		// Curses window
 
 // Create a structure for saving calling mode settings
@@ -214,6 +216,9 @@ rx_metadata_t callingModeSettings[2];
 
 // Flag to indicate usb connection is open
 int gpsUsbOpen = 0;
+
+// Flag to indicate that the antenna tracker thread should stop
+int anttrack_stop = 0;
 
 void CloseDisplay( WINDOW * mainwin )
 {
@@ -2171,6 +2176,13 @@ void LoadConfigFile(void)
     RegisterConfigBoolean(MainSection, -1, "AntTrackDebug", &Config.AntTrackDebug, NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackLog", &Config.AntTrackLog, NULL);
 
+    if (Config.EnableAntennaTracker && Config.altitude && Config.longitude && Config.altitude) {
+        if (Config.AntTrackDebug) {
+            LogMessage("Config file gateway location used for Antenna Tracker\n");
+        }
+        anttrack_set_gateway_position(Config.latitude, Config.longitude, Config.altitude);
+    }
+
     for (Channel = 0; Channel <= 1; Channel++)
     {
 		RegisterConfigDouble(MainSection, Channel, "frequency", &Config.LoRaDevices[Channel].Frequency, LoRaCallback);
@@ -2669,7 +2681,7 @@ int main( int argc, char **argv )
     int ch;
     int LoopPeriod, MSPerLoop;
 	int Channel;
-    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread, GpsUsbThread;
+    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread, GpsUsbThread, AntTrackGpsThread;
 	struct TServerInfo JSONInfo, TelnetInfo, DataportInfo, ChatportInfo;
 
 	atexit(bye);
@@ -2857,6 +2869,16 @@ int main( int argc, char **argv )
 
     }
 
+    if (Config.EnableAntennaTracker) {
+
+        if ( pthread_create (&AntTrackGpsThread, NULL, anttrack_loop, NULL))
+        {
+            printf( stderr, "Error creating Antenna Tracker GPS thread\n" );
+            return 1;
+        }
+
+    }
+
     // Initializes the structure used for storing calling mode settings
     callingModeSettings[0].Channel = -1;
     callingModeSettings[1].Channel = -1;
@@ -3020,6 +3042,14 @@ int main( int argc, char **argv )
         LogMessage( "Closing GPS USB Port\n" );
         disconnectUSB();
     }
+    
+    if (Config.EnableAntennaTracker)
+	{
+        anttrack_stop = 1;
+		LogMessage( "Waiting for AntTrack thread to close ...\n" );
+		pthread_join( AntTrackGpsThread, NULL );
+		LogMessage( "AntTrack thread closed\n" );
+	}
 	
     pthread_mutex_destroy( &var );
 

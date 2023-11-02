@@ -11,6 +11,7 @@ gateway
 gateway.txt
 telemetry.txt
 packets.txt
+tracking_angles.txt
 ssdv
 gateway-mode0.txt
 test.txt

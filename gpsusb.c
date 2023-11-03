@@ -18,6 +18,8 @@
 
 extern lifo_buffer_t GPS_USB_Upload_Buffer;
 
+extern int gpsUsbOpen;
+
 #include "gpsusb.h"
 
 volatile int fd;
@@ -200,6 +202,7 @@ void *GpsUsbLoop( void *some_void_ptr ) {
     if (Config.EnableGPSUSB) {
         if (Config.GPSUSBPort) {
             if (connectUSB(Config.GPSUSBPort, 9600) > 0) {
+                gpsUsbOpen = 1;
                 //LogMessage( "GPS USB Serial Port openned\n" );
                 received_t *dequeued_telemetry_ptr;
 
@@ -239,4 +242,5 @@ void *GpsUsbLoop( void *some_void_ptr ) {
             LogMessage( "GPS USB Serial Port not set\n");
         }
     }
+    return NULL;
 }

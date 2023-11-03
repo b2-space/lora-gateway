@@ -142,18 +142,18 @@ void anttrack_set_object_position(double lat, double lon, double alt, unsigned i
                     tm = localtime( &now );
                     if (Config.AntTrackDebug) {
                         fprintf( fp, "%02d:%02d:%02d - Track Debug: using "
-                        "Gw lat %.3lf lon %.3lf alt %.0lfm,"
-                        " obj: lat %.3lf lon %.3lf alt %.0lfm\n",
-                        tm->tm_hour, tm->tm_min, tm->tm_sec,
-                        gateway_position.lat, gateway_position.lon, gateway_position.alt,
-                        object_position[channel].lat, object_position[channel].lon, object_position[channel].alt);
+                            "Gw lat %.3f lon %.3f alt %.0fm,"
+                            " obj: lat %.3f lon %.3f alt %.0fm\n",
+                            tm->tm_hour, tm->tm_min, tm->tm_sec,
+                            gateway_position.lat / DEG_TO_RAD, gateway_position.lon / DEG_TO_RAD, gateway_position.alt,
+                            object_position[channel].lat / DEG_TO_RAD, object_position[channel].lon / DEG_TO_RAD, object_position[channel].alt);
                     }
                     fprintf( fp, "%02d:%02d:%02d - Track Info: Dist: %.0fm"
-                    ", 3D Dist: %.0fm"
-                    ", azimuth: %.0fº"
-                    ", elevation: %.0fº\n",
-                    tm->tm_hour, tm->tm_min, tm->tm_sec,
-                    distance, distance_3d, bearing, elevation);
+                        ", 3D Dist: %.0fm"
+                        ", azimuth: %.0fº"
+                        ", elevation: %.0fº\n",
+                        tm->tm_hour, tm->tm_min, tm->tm_sec,
+                        distance, distance_3d, bearing, elevation);
                     fclose( fp );
                 }
             }

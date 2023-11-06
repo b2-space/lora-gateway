@@ -768,6 +768,13 @@ void SendLoRaData(int Channel, char *buffer, int Length)
 	// Now send the (possibly updated) length in the LoRa chip
     writeRegister( Channel, REG_PAYLOAD_LENGTH, Length );
 
+    // Indicate uplink through activity LED
+    if ( Config.LoRaDevices[Channel].ActivityLED >= 0 )
+    {
+        digitalWrite( Config.LoRaDevices[Channel].ActivityLED, 1 );
+        LEDCounts[Channel] = 2;
+    }
+
     // go into transmit mode
     setMode( Channel, RF98_MODE_TX );
 }
@@ -1707,7 +1714,7 @@ void DIO0_Interrupt( int Channel )
             if ( Config.LoRaDevices[Channel].ActivityLED >= 0 )
             {
                 digitalWrite( Config.LoRaDevices[Channel].ActivityLED, 1 );
-                LEDCounts[Channel] = 5;
+                LEDCounts[Channel] = 1;
             }
 
             if ( Received.Message[0] == '!' )

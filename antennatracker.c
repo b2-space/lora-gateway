@@ -162,14 +162,17 @@ void anttrack_set_object_position(double lat, double lon, double alt, unsigned i
 }
 
 void anttrack_set_object_telemetry(char *telemetry, unsigned int channel) {
+    char object_name[30];
     double lat, lon, alt;
     int alt_int;
 
-    // Parse 4th 5th and 6th fields of telemetry as lat, lon, alt
+    // Parse 1sts, 4th 5th and 6th fields of telemetry as name, lat, lon, alt
     // TODO: telemetry may vary. Set this in gateway.txt config
-    int num_params = sscanf(telemetry, "%*[^,],%*[^,],%*[^,],%lf,%lf,%d", &lat, &lon, &alt_int);
+    int num_params = sscanf(telemetry, "%29[^,],%*[^,],%*[^,],%lf,%lf,%d", object_name, &lat, &lon, &alt_int);
 
-    if (num_params == 3 && (lat != 0.0 || lon != 0.0 || alt_int != 0)) {
+    // If sscanf found all 4 params containing object name and some data, and object name matches or looking for any
+    if (num_params == 4 && (lat != 0.0 || lon != 0.0 || alt_int != 0) && strlen(object_name) &&
+        (!strlen(Config.AntTrackObjName) || !strcmp(Config.AntTrackObjName, object_name))) {
         alt = alt_int;
         anttrack_set_object_position(lat, lon, alt, channel);
     }

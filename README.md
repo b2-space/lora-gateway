@@ -247,8 +247,9 @@ If a USB Dongle is connected, it uses updates the gateway position with that dat
 
 Once a new telemetry message is received, it calculates the angles and shows them in the display as well as in a text file.
 The expected telemetry string is *lat,lon,alt* as in the standard TTGO message (an adaptable telemetry string is yet TBD).
+You can also select a device name to track only a single sender and ignore the rest of the telemetry.
 
-See configuration options in gateway-sample.txt for enabling the module, the debug and the logging.
+See configuration options in gateway-sample.txt for enabling the module, the debug and the logging, and selecting a sender to track.
 
 Dependencies:
 - Install gpslib with *sudo apt install libgps-dev*.
@@ -327,6 +328,11 @@ Many thanks to David Brooke for coding this feature and the AFC.
 
 Change History
 ==============
+
+## 08/11/2023 - V1.11.1
+
+	GPSUSB option to output data only from one LoRa device.
+	AntennaTracker option to track only one LoRa device.
 
 ## 02/11/2023 - V1.11.0
 

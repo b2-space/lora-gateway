@@ -112,19 +112,24 @@ int sendNmeaUsb(received_t *t) {
     int i = 0;
 
     char *nmeaString = calloc(256, 1);
-    char *rest = t->Message;
+    char *rest = t->Message + 2; // Exclude starting $$ from module name
     char *token;
     strcat(nmeaString, "$GPGGA,");
     bool valid = true;
 
     while (valid && (token = strtok_r(rest, ",", &rest))) {
         switch(i) {
-            case 0:
             case 1:
             case 6:
             case 7:
             case 8:
                 //LogMessage( "Value of i: %d, token: %s\n" , i, token);
+                break;
+            case 0:
+                if (strlen(Config.GPSUSBObjName) && strcmp(Config.GPSUSBObjName, token)) {
+                    // Don't process this message since we are looking for other object
+                    valid = false;
+                }
                 break;
             case 2:
                 strcat(nmeaString, nmeaTimestamp(token));

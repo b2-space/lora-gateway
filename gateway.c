@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.11.0"
+#define VERSION	"V1.11.1"
 bool run = TRUE;
 
 // RFM98
@@ -1148,7 +1148,7 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
 			LogTelemetryPacket(Channel, startmessage);
 
             if (Config.EnableAntennaTracker) {
-                anttrack_set_object_telemetry(startmessage, Channel);
+                anttrack_set_object_telemetry(startmessage + 2, Channel); // Exclude starting $$ from module name
             }
 
             ProcessLineUKHAS(Channel, startmessage);
@@ -2171,17 +2171,22 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
     // GPSUSBSerial
+    *Config.GPSUSBObjName = '\0';
     RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBPort", &Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBObjName", &Config.GPSUSBObjName, sizeof(Config.GPSUSBObjName), NULL);
 
     // AntennaTracker
     Config.EnableAntennaTracker = false;
 	*Config.AntTrackTelemetryParse = '\0';
 	Config.AntTrackDebug = false;
+	Config.AntTrackLog = false;
+    *Config.AntTrackObjName = '\0';
     RegisterConfigBoolean(MainSection, -1, "EnableAntennaTracker", &Config.EnableAntennaTracker, NULL);
     RegisterConfigString(MainSection, -1, "AntTrackTelemetryParse", &Config.AntTrackTelemetryParse, sizeof(Config.GPSUSBPort), NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackDebug", &Config.AntTrackDebug, NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackLog", &Config.AntTrackLog, NULL);
+    RegisterConfigString(MainSection, -1, "AntTrackObjName", &Config.AntTrackObjName, sizeof(Config.AntTrackObjName), NULL);
 
     if (Config.EnableAntennaTracker && Config.altitude && Config.longitude && Config.altitude) {
         if (Config.AntTrackDebug) {

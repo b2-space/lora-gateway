@@ -211,12 +211,22 @@ The gateway can uplink messages to the tracker.  Currently this is restricted to
 The code uses Linux system time, so the gateway should ideally be using a GPS receiver the GPSD daemon.  NTP may prove sufficient however.
 
 The installation instructions for synchronizing the system time with the GPS dongle receiver are the following:
-1. Acquire a USB-dongle (e.g., GPS/GLONASS U-blox 7).
+1. Acquire a USB-dongle (e.g., GPS/GLONASS U-blox 7). Connect it to the gateway and find out the type of device (/dev/ttyUSB0 or /dev/ttyACM0).
 2. Install *gpsd* with *sudo apt install gpsd*.
-3. Plug-in the dongle and run *cgps* within GPS coverage to verify that it is working.
-4. Install the NTP time server with *sudo apt-get update* and *sudo apt-get install ntp*.
-5. Modify the configuration file of NTP with *sudo nano /etc/ntp.conf*.
-6. Append following lines to add GPS and GPS fix as a source for updating the time:
+3. Use *sudo nano /etc/default/gpsd* to modify the file and make it look like the following:
+```
+# Default settings for gpsd.
+# change the options.
+START_DAEMON="true"
+GPSD_OPTIONS="-n"
+DEVICES="/dev/ttyUSB0" # Configure for your GPS USB device (/dev/ttyUSB0 or /dev/ttyACM0)
+USBAUTO="true"
+GPSD_SOCKET="/var/run/gpsd.sock"
+```
+4. Plug-in the dongle and run *cgps* within GPS coverage to verify that it is working.
+5. Install the NTP time server with *sudo apt-get update* and *sudo apt-get install ntp*.
+6. Modify the configuration file of NTP with *sudo nano /etc/ntp.conf*.
+7. Append following lines to add GPS and GPS fix as a source for updating the time:
 ```
 # GPS Serial data reference
 server 127.127.28.0 minpoll 4 maxpoll 4
@@ -226,9 +236,20 @@ fudge 127.127.28.0 time1 0.0 refid GPS
 server 127.127.28.1 minpoll 4 maxpoll 4 prefer
 fudge 127.127.28.1 refid PPS
 ```
-7. Save changes and exit with Ctrl+X and Y(es).
-8. Restart NTP with *sudo systemctl restart ntp*
-9. Check if NTPD is using GPSD as a time source by running *ntpq -p* (look for lines with reference ID of ".GPS." or "PPS.")
+8. Use *sudo nano /etc/rc.local* to modify the file adding this line before *exit 0*:
+```
+{...}
+gpspipe -r -n 1 &
+exit 0
+```
+9. Restart NTP with *sudo systemctl restart ntp*
+10. Check if NTPD is using GPSD as a time source by running *ntpq -p* (look for lines with reference ID of ".GPS." or "PPS.")
+
+The system time should be syncronized now even with no internet.
+If it does not, the sync can be triggered by:
+1. sudo service ntp stop
+2. sudo ntpd -gq
+3. sudo service ntp start
 
 For uplinks to work, both UplinkTime and UplinkCycle have to be set for the appropriate channel.
 

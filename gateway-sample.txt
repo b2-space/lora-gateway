@@ -17,6 +17,8 @@ LogTelemetry=Y
 LogPackets=Y
 CallingTimeout=60
 ServerPort=6004
+#SMSFolder=SMSUplinks
+#UplinkMsgFolder=TimedMsgUplinks
 
 NetworkLED=22
 InternetLED=23

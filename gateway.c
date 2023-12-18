@@ -1556,6 +1556,88 @@ int GetTextMessageToUpload( int Channel, char *Message )
     return Result;
 }
 
+time_t to_seconds(const char *datetime)
+{
+    struct tm storage = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    char *p = NULL;
+    time_t retval = 0;
+
+    p = strptime(datetime, "%Y-%m-%d %H:%M:%S", &storage);
+    if (p != NULL)
+    {
+        retval = mktime(&storage);
+    }
+    return retval;
+}
+
+int GetTimedMsgToUpload(int Channel, char *Message)
+{
+    DIR *dp;
+    struct dirent *ep;
+    int Result, FileChannel;
+    time_t rawtime;
+    struct tm * timeinfo;
+    time_t FileDateTime, CurrentDateTime;
+
+    CurrentDateTime = time(NULL);
+
+    Result = 0;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(CurrentDateTime, sizeof(CurrentDateTime), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    if (Config.UplinkMsgFolder[0])
+    {
+        // LogMessage("Ch%d: Checking for MSG file in '%s' folder ...\n", Channel, Config.UplinkMsgFolder);
+        dp = opendir(Config.UplinkMsgFolder);
+        if (dp != NULL)
+        {
+            while ((ep = readdir(dp)) && !Result)
+            {
+                if (strstr(ep->d_name, ".msg"))
+                {
+                    FILE *fp;
+                    char Line[256], FileName[256], FileDateTimeStr[256];
+
+                    sprintf(FileName, "%s/%s", Config.UplinkMsgFolder, ep->d_name);
+                    if ((fp = fopen(FileName, "rt")) != NULL)
+                    {
+                        if (fscanf(fp, "%d,%[^,],%[^\r]", &FileChannel, FileDateTimeStr, Line) == 3)
+                        {
+                            FileDateTime = to_seconds(FileDateTimeStr);
+                            if (FileChannel == Channel && difftime(FileDateTime, CurrentDateTime) >= 0)
+                            {
+                                strcpy(Message, Line);
+                                Result = 1;
+                                LogMessage( "Found msg to uplink on time %s for channel %d: %s\n", FileDateTimeStr, FileChannel, Message);
+                                if (*Config.UplinkCode)
+                                {
+                                    EncryptMessage(Config.UplinkCode, Message);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            LogMessage("Found invalid timed msg to uplink: %s\n", FileName);
+                        }
+                        fclose(fp);
+                        if (Result)
+                        {
+                            remove(FileName);
+                        }
+                    }
+                }
+            }
+            closedir(dp);
+        }
+		else
+		{
+			LogMessage("Failed to open folder - error code %d\n", errno);
+		}
+    }
+    return Result;
+}
+
 int GetExternalListOfMissingSSDVPackets( int Channel, char *Message )
 {
     // First, create request file
@@ -1634,9 +1716,13 @@ void SendUplinkMessage(int Channel)
     {
         SendLoRaData(Channel, Message, strlen(Message));
     }
-    else if (GetExternalListOfMissingSSDVPackets( Channel, Message))
+    else if (GetTimedMsgToUpload(Channel, Message))
     {
         SendLoRaData(Channel, Message, strlen(Message));
+    }
+    else if (GetExternalListOfMissingSSDVPackets( Channel, Message))
+    {
+        SendLoRaData(Channel, Message, strlen(Message)+1);
     }
     else if (Config.LoRaDevices[Channel].IdleUplink)
     {
@@ -2155,6 +2241,14 @@ void LoadConfigFile(void)
     {
 		RemoveTrailingSlash(Config.SMSFolder);
         LogMessage("Folder %s will be scanned for messages to upload\n", Config.SMSFolder);
+    }
+    
+    // Timed Msgs upload to tracker
+	RegisterConfigString(MainSection, -1, "UplinkMsgFolder", Config.UplinkMsgFolder, sizeof(Config.UplinkMsgFolder), NULL);
+    if (Config.UplinkMsgFolder[0])
+    {
+		RemoveTrailingSlash(Config.UplinkMsgFolder);
+        LogMessage("Folder %s will be scanned for timed messages to upload per channel\n", Config.UplinkMsgFolder);
     }
 
     // Dump buffer

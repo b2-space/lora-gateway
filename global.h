@@ -141,6 +141,7 @@ struct TConfig
 	int HABChannel;				// LoRa Channel for uplink
 	int DataPort;				// Raw received data packet port
 	char SMSFolder[64];
+	char UplinkMsgFolder[64];
 	char radio[64];
 	char antenna[64];
 	int EnableDev;

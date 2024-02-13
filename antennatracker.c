@@ -102,11 +102,11 @@ void anttrack_set_gateway_position(double lat, double lon, double alt) {
     gateway_position.alt = alt;
     gateway_position_rx = true;
     if (Config.AntTrackDebug) {
-        LogMessage("Gateway pos rx: lat %.3f lon %.3f alt %.1f\n", lat, lon, alt);
+        LogMessage("-Gateway pos rx: lat %.3f lon %.3f alt %.1f\n", lat, lon, alt);
     }
 }
 
-void anttrack_set_object_position(double lat, double lon, double alt, unsigned int channel) {
+void anttrack_set_object_position(double lat, double lon, double alt, unsigned int channel, char *object_name) {
     if (channel < GW_NUM_CHANNELS) {
         object_position[channel].lat = lat * DEG_TO_RAD;
         object_position[channel].lon = lon * DEG_TO_RAD;
@@ -122,13 +122,13 @@ void anttrack_set_object_position(double lat, double lon, double alt, unsigned i
             double elevation = calculate_elevation(gateway_position.lat, gateway_position.lon, gateway_position.alt,
                 object_position[channel].lat, object_position[channel].lon, object_position[channel].alt);
             if (Config.AntTrackDebug) {
-                LogMessage("AntennaTracker pos rx ch %d: lat %.3f lon %.3f alt %.1f\n", channel, lat, lon, alt);
+                LogMessage("-AntennaTracker pos rx ch %d: lat %.3f lon %.3f alt %.1f\n", channel, lat, lon, alt);
+                LogMessage("-Track Info: Dist: %.0fm", distance);
+                LogMessage(", 3D Dist: %.0fm", distance_3d);
+                LogMessage(", azimuth: %.0fº", bearing);
+                LogMessage(", elevation: %.0fº\n", elevation);
             }
-            LogMessage("-Track Info: Dist: %.0fm", distance);
-            LogMessage(", 3D Dist: %.0fm", distance_3d);
-            LogMessage(", azimuth: %.0fº", bearing);
-            LogMessage(", elevation: %.0fº\n", elevation);
-            
+
             if (Config.AntTrackLog) {
                 // Save to file
                 FILE *fp;
@@ -148,11 +148,13 @@ void anttrack_set_object_position(double lat, double lon, double alt, unsigned i
                             gateway_position.lat / DEG_TO_RAD, gateway_position.lon / DEG_TO_RAD, gateway_position.alt,
                             object_position[channel].lat / DEG_TO_RAD, object_position[channel].lon / DEG_TO_RAD, object_position[channel].alt);
                     }
-                    fprintf( fp, "%02d:%02d:%02d - Track Info: Dist: %.0fm"
+                    fprintf( fp, "%02d:%02d:%02d - Track Info (%d:%s):"
+                        " Dist: %.0fm"
                         ", 3D Dist: %.0fm"
                         ", azimuth: %.0fº"
                         ", elevation: %.0fº\n",
                         tm->tm_hour, tm->tm_min, tm->tm_sec,
+                        channel, object_name,
                         distance, distance_3d, bearing, elevation);
                     fclose( fp );
                 }
@@ -174,7 +176,7 @@ void anttrack_set_object_telemetry(char *telemetry, unsigned int channel) {
     if (num_params == 4 && (lat != 0.0 || lon != 0.0 || alt_int != 0) && strlen(object_name) &&
         (!strlen(Config.AntTrackObjName) || !strcmp(Config.AntTrackObjName, object_name))) {
         alt = alt_int;
-        anttrack_set_object_position(lat, lon, alt, channel);
+        anttrack_set_object_position(lat, lon, alt, channel, object_name);
     }
 }
 

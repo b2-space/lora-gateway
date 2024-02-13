@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 16/02/2024 - V1.11.2
+
+	Tracking angles information logged to file include now channel and object name.
+
 ## 08/11/2023 - V1.11.1
 
 	GPSUSB option to output data only from one LoRa device.

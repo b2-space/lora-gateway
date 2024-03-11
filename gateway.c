@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.11.2"
+#define VERSION	"V1.12.0"
 bool run = TRUE;
 
 // RFM98
@@ -1584,7 +1584,7 @@ int GetTimedMsgToUpload(int Channel, char *Message)
     Result = 0;
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(CurrentDateTime, sizeof(CurrentDateTime), "%Y-%m-%d %H:%M:%S", timeinfo);
+    strftime(CurrentDateTime, sizeof(CurrentDateTime), "%Y-%m-%d %H:%M:%S", timeinfo); // TODO: REVIEW strftime, CurrentDateTime should be string
 
     if (Config.UplinkMsgFolder[0])
     {
@@ -2270,9 +2270,9 @@ void LoadConfigFile(void)
     *Config.GPSUSBObjName = '\0';
     Config.GPSUSBObjChannel = -1;
     RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
-    RegisterConfigString(MainSection, -1, "GPSUSBPort", &Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
-    RegisterConfigString(MainSection, -1, "GPSUSBOutput", &Config.GPSUSBOutput, sizeof(Config.GPSUSBOutput), NULL);
-    RegisterConfigString(MainSection, -1, "GPSUSBObjName", &Config.GPSUSBObjName, sizeof(Config.GPSUSBObjName), NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBPort", Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBOutput", Config.GPSUSBOutput, sizeof(Config.GPSUSBOutput), NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBObjName", Config.GPSUSBObjName, sizeof(Config.GPSUSBObjName), NULL);
     RegisterConfigInteger(MainSection, -1, "GPSUSBObjChannel", &Config.GPSUSBObjChannel, NULL);
 
     // AntennaTracker
@@ -2282,10 +2282,10 @@ void LoadConfigFile(void)
 	Config.AntTrackLog = false;
     *Config.AntTrackObjName = '\0';
     RegisterConfigBoolean(MainSection, -1, "EnableAntennaTracker", &Config.EnableAntennaTracker, NULL);
-    RegisterConfigString(MainSection, -1, "AntTrackTelemetryParse", &Config.AntTrackTelemetryParse, sizeof(Config.GPSUSBPort), NULL);
+    RegisterConfigString(MainSection, -1, "AntTrackTelemetryParse", Config.AntTrackTelemetryParse, sizeof(Config.GPSUSBPort), NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackDebug", &Config.AntTrackDebug, NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackLog", &Config.AntTrackLog, NULL);
-    RegisterConfigString(MainSection, -1, "AntTrackObjName", &Config.AntTrackObjName, sizeof(Config.AntTrackObjName), NULL);
+    RegisterConfigString(MainSection, -1, "AntTrackObjName", Config.AntTrackObjName, sizeof(Config.AntTrackObjName), NULL);
 
     if (Config.EnableAntennaTracker && Config.altitude && Config.longitude && Config.altitude) {
         if (Config.AntTrackDebug) {

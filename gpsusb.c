@@ -39,146 +39,86 @@ void disconnectUSB() {
     serialFlush(fd);
 }
 
-
-void sendUSB(char* str) {
+void sendStringUSB(char* str) {
     serialPuts(fd, str);
 }
 
-char* nmeaTimestamp(char *datetime) {
-
-   char* timeStamp = calloc(64, 1);
-   char *rest = datetime;
-   char *timeToken;
-
-   while ((timeToken = strtok_r(rest, ":", &rest))) {
-        strcat(timeStamp, timeToken);
-   }
-   return timeStamp;
+void sendUSB(uint8_t* array, uint16_t size) {
+    for(size_t i = 0; i < size; i++) {
+        serialPutchar(fd, array[i]);
+    }
 }
 
-char *nmeaLatitude(char *latitude) {
-
-    char *ns = calloc(2,1);
-    float latitudeValue = atof(latitude);
-
-    if (latitudeValue < 0.00001) {
-        ns =  "S";
-        latitudeValue *= -1.0;
-    }
-    else {
-        ns = "N";
-    }
-
-    float fLat = floor(latitudeValue);
-    float minutesLat = (latitudeValue - fLat) * 60.00;
-
-    //LogMessage( "Called nmeaLatitude with Latitude %s, converted to: %09.4f, %s\n" , latitude, (fLat*100.0) + minutesLat, ns); 
-    char *ret = calloc(32, 1);
-    sprintf(ret, "%09.4f,%s,", (fLat*100.0) + minutesLat, ns);
-    return ret;
-}
-
-char *nmeaLongitude(char *longitude) {
-
-    char *ew = calloc(2,1);
-    float longitudeValue = atof(longitude);
-
-    if (longitudeValue < 0.00001) {
-        ew =  "W";
-        longitudeValue *= -1.0;
-    }
-    else {
-        ew = "E";
-    }
-
-    float fLong = floor(longitudeValue);
-    float minutesLong = (longitudeValue - fLong) * 60.00;
-
-    //LogMessage( "Called nmeaLongitude with Longitude %s, converted to: %010.4f, %s\n" , longitude, (fLong*100.0) + minutesLong, ew); 
-    char *ret = calloc(32, 1);
-    sprintf(ret, "%010.4f,%s,", (fLong*100.0) + minutesLong, ew);
-    return ret;
-}
-
-char *nmeaAltitude(char *altitude) {
-
-    char *ret = calloc(32, 1);
-    sprintf(ret, "%.1f,M,", atof(altitude));
-    return ret;
-}
-
-// we are generating the format (without spaces):
-// $GPGGA, 125546.00, 5228.0434, N, 00201.2780, W, 1, 13, 1.00, 201.0, M, , , , 0000*40
-//  given: $$B2S-INDRA-1,211,12:55:46,52.46739,-2.02130,201,10,0,0*F0D0
+// Generating this format:
+//  $GPGGA,125546.00,5228.0434,N,00201.2780,W,1,13,1.00,201.0,M,,,,*1C
+// given:
+//  $$B2S-INDRA-1,211,12:55:46,52.46739,-2.02130,201,10,0,0*F0D0
 int sendNmeaUsb(received_t *t) {
-    //LogMessage( "Parsing: %s\n" , t->Message);
+ #define NMEA_STR_SIZE	220u
+    bool valid = false;
+	char *telemetry_str = t->Message;
+	int satellites = 13, quality = 1;
+	float hdop = 1.00;
+	int nmea_str_len;
 
-    int i = 0;
-
-    char *nmeaString = calloc(256, 1);
-    char *rest = t->Message + 2; // Exclude starting $$ from module name
-    char *token;
-    strcat(nmeaString, "$GPGGA,");
-    bool valid = true;
-
-    while (valid && (token = strtok_r(rest, ",", &rest))) {
-        switch(i) {
-            case 1:
-            case 6:
-            case 7:
-            case 8:
-                //LogMessage( "Value of i: %d, token: %s\n" , i, token);
-                break;
-            case 0:
-                if (strlen(Config.GPSUSBObjName) && strcmp(Config.GPSUSBObjName, token)) {
-                    // Don't process this message since we are looking for other object
-                    valid = false;
-                } else if ((Config.GPSUSBObjChannel >= 0) && (Config.GPSUSBObjChannel != t->Metadata.Channel)) {
-                    // Don't process this message since we are looking for other channel
-                    valid = false;
-                }
-                break;
-            case 2:
-                strcat(nmeaString, nmeaTimestamp(token));
-                strcat(nmeaString, ".00,"); // 181908.00
-                break;
-            case 3:
-    		//LogMessage( "latitude token %s\n" , token);
-                if (strcmp(token, "0.00000") == 0) {
-		    valid = false;
-                    //LogMessage("zero latitude found\n");
-                    break;
-                }
-                strcat(nmeaString, nmeaLatitude(token));
-                break;
-            case 4:
-                strcat(nmeaString, nmeaLongitude(token));// 07044.3966270,W
-                strcat(nmeaString, "1,");                    // Quality
-                strcat(nmeaString, "13,");                   // Number of satllites
-                strcat(nmeaString, "1.00,");                 // HDOP
-                break;
-            case 5:
-                strcat(nmeaString, nmeaAltitude(token)); // 495.144,M
-                strcat(nmeaString, ",");  // Geoidal Separation
-                strcat(nmeaString, ",");            // Age
-                strcat(nmeaString, ",0000");    // Correction
-                break;
-        }
-        i++;
+	// Parse the telemetry string
+    if (sscanf(telemetry_str, "%[^,],%lld,%8[^,],%lf,%lf,%lld",
+        t->Telemetry.Callsign, &t->Telemetry.SentenceId, t->Telemetry.TimeString,
+        &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 6) {
+        valid = true;
     }
 
-    // Calculate and append checksum 
-    int checksum = 0; 
-    for (int i = 1; i < strlen(nmeaString); i++) { 
-        checksum ^= nmeaString[i]; 
-    } 
-    sprintf(nmeaString + strlen(nmeaString), "*%02X", checksum);
+   if (valid) {
+       if (strlen(Config.GPSUSBObjName) && strcmp(Config.GPSUSBObjName, t->Telemetry.Callsign)) {
+           // Don't process this message since we are looking for other object
+           valid = false;
+       } else if ((Config.GPSUSBObjChannel >= 0) && (Config.GPSUSBObjChannel != t->Metadata.Channel)) {
+           // Don't process this message since we are looking for other channel
+           valid = false;
+       }
+   }
 
-    strcat(nmeaString, "\r\n");
-    if (valid) {
-        sendUSB(nmeaString);
-    }
-    return i;
+	if (valid) {
+		// Convert latitude and longitude to NMEA format
+		int lat_deg = (int)fabs(t->Telemetry.Latitude);
+		float lat_min = (fabs(t->Telemetry.Latitude) - lat_deg) * 60;
+		int lon_deg = (int)fabs(t->Telemetry.Longitude);
+		float lon_min = (fabs(t->Telemetry.Longitude) - lon_deg) * 60;
+
+		// Prepare NMEA sentence
+		char nmea_sentence[NMEA_STR_SIZE];
+		snprintf(nmea_sentence, sizeof(nmea_sentence),
+				 "$GPGGA,%02d%02d%02d.00,%02d%07.4f,%c,%03d%07.4f,%c,%d,%02d,%04.2f,%3.1f,M,,,,",
+				 (t->Telemetry.TimeString[0]-'0')*10 + (t->Telemetry.TimeString[1]-'0'), // hours
+				 (t->Telemetry.TimeString[3]-'0')*10 + (t->Telemetry.TimeString[4]-'0'), // minutes
+				 (t->Telemetry.TimeString[6]-'0')*10 + (t->Telemetry.TimeString[7]-'0'), // seconds
+				 lat_deg, lat_min, t->Telemetry.Latitude >= 0 ? 'N' : 'S',
+				 lon_deg, lon_min, t->Telemetry.Longitude >= 0 ? 'E' : 'W',
+				 quality, satellites, hdop, (float)t->Telemetry.Altitude);
+
+		// Calculate checksum
+		int checksum = 0;
+		for (int i = 1; nmea_sentence[i] != '\0' && nmea_sentence[i] != '*'; i++) {
+			checksum ^= nmea_sentence[i];
+		}
+
+		// Append checksum to NMEA sentence
+		char final_nmea_sentence[NMEA_STR_SIZE];
+		nmea_str_len = snprintf(final_nmea_sentence, NMEA_STR_SIZE, "%s*%02X\r\n", nmea_sentence, checksum);
+
+		if (nmea_str_len < (NMEA_STR_SIZE - 1)) {
+			// Send NMEA sentence through USB
+			sendStringUSB(nmea_sentence);
+		} else {
+			valid = false;
+		}
+	}
+
+	if (valid) {
+		return nmea_str_len; // Success
+	} else {
+		return 0;
+	}
 }
 
 // Function to convert HH:MM:SS to seconds since midnight
@@ -214,7 +154,7 @@ int sendMavlinkUsb(received_t *t) {
 
     // Parse the custom telemetry string
     char *telemetry_str = t->Message;
-    if (sscanf(telemetry_str, "%[^,],%ld,%8[^,],%lf,%lf,%ld",
+    if (sscanf(telemetry_str, "%[^,],%lld,%8[^,],%lf,%lf,%lld",
         t->Telemetry.Callsign, &t->Telemetry.SentenceId, t->Telemetry.TimeString,
         &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 6) {
         valid = true;
@@ -253,15 +193,17 @@ int sendMavlinkUsb(received_t *t) {
 
         // Serialize the GPS_RAW_INT message
         uint8_t gps_buffer[MAVLINK_MAX_PACKET_LEN];
-        mavlink_msg_to_send_buffer(gps_buffer, &gps_msg);
+        uint16_t gps_buffer_len = mavlink_msg_to_send_buffer(gps_buffer, &gps_msg);
 
         // Serialize the message
         uint8_t global_buffer[MAVLINK_MAX_PACKET_LEN];
-        mavlink_msg_to_send_buffer(global_buffer, &global_msg);
+        uint16_t global_buffer_len = mavlink_msg_to_send_buffer(global_buffer, &global_msg);
 
         // Send the message through USB
-        sendUSB((char*)gps_buffer);
-        sendUSB((char*)global_buffer);
+        // LogMessage("Sending MAVLink GPS_RAW_INT msg (%dB)\n", gps_buffer_len);
+        sendUSB(gps_buffer, gps_buffer_len);
+        // LogMessage("Sending MAVLink GLOBAL_POSITION_INT msg (%dB)\n", global_buffer_len);
+        sendUSB(global_buffer, global_buffer_len);
     }
     return valid;
 }

@@ -15,6 +15,7 @@
 
 #include "global.h"
 #include "lifo_buffer.h"
+#include "mavlink/common/mavlink.h"
 
 extern lifo_buffer_t GPS_USB_Upload_Buffer;
 
@@ -23,6 +24,9 @@ extern int gpsUsbOpen;
 #include "gpsusb.h"
 
 volatile int fd;
+
+// Function pointer to select either NMEA or MAVLink output type
+typedef int (*GPSUsbSendFunction)(received_t *t);
 
 
 int connectUSB(char* portname, int baudRate) {
@@ -36,8 +40,8 @@ void disconnectUSB() {
 }
 
 
-void sendUSB(char* latLongAz) {
-    serialPuts(fd, latLongAz);
+void sendUSB(char* str) {
+    serialPuts(fd, str);
 }
 
 char* nmeaTimestamp(char *datetime) {
@@ -129,6 +133,9 @@ int sendNmeaUsb(received_t *t) {
                 if (strlen(Config.GPSUSBObjName) && strcmp(Config.GPSUSBObjName, token)) {
                     // Don't process this message since we are looking for other object
                     valid = false;
+                } else if ((Config.GPSUSBObjChannel >= 0) && (Config.GPSUSBObjChannel != t->Metadata.Channel)) {
+                    // Don't process this message since we are looking for other channel
+                    valid = false;
                 }
                 break;
             case 2:
@@ -174,33 +181,89 @@ int sendNmeaUsb(received_t *t) {
     return i;
 }
 
-int sendGpsUsb(received_t *t ) {
+// Function to convert HH:MM:SS to seconds since midnight
+static int hhmmss_to_seconds(const char* hhmmss) {
+    int hours, minutes, seconds;
+    sscanf(hhmmss, "%d:%d:%d", &hours, &minutes, &seconds);
+    return hours * 3600 + minutes * 60 + seconds;
+}
 
-    char gpsStr[64] = "";
-    char *token;
+// Function to get the number of seconds since the GPS epoch (1980-01-06)
+static uint32_t get_time_since_gps_epoch(const char* gpshour) {
+    // Get the current date and time
+    time_t rawtime;
+    struct tm * timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
 
-    int i = 0;
- 
-    // Keep printing tokens while one of the
-    // delimiters present in str[].
-    while ((token = strtok(t->Message, ","))) {
-        switch(i) {
-            case 3:
-            case 4:
-                strcat(gpsStr, token);
-                strcat(gpsStr, ",");
-            break;
-            case 5:
-                strcat(gpsStr, token);
-                strcat(gpsStr, "\r\n");
-            break;
-        }
-        i++;
+    // Parse the gpshour and set the hours, minutes, and seconds
+    int seconds_since_midnight = hhmmss_to_seconds(gpshour);
+    timeinfo->tm_hour = 0;
+    timeinfo->tm_min = 0;
+    timeinfo->tm_sec = 0;
+
+    // Convert back to time_t and then to seconds since the GPS epoch
+    time_t today_midnight = mktime(timeinfo);
+    uint32_t seconds_since_gps_epoch = (uint32_t)(today_midnight - 315964800) + seconds_since_midnight; // 315964800 is the number of seconds from Unix epoch to GPS epoch
+
+    return seconds_since_gps_epoch;
+}
+
+int sendMavlinkUsb(received_t *t) {
+    bool valid = false;
+
+    // Parse the custom telemetry string
+    char *telemetry_str = t->Message;
+    if (sscanf(telemetry_str, "%[^,],%ld,%8[^,],%lf,%lf,%ld",
+        t->Telemetry.Callsign, &t->Telemetry.SentenceId, t->Telemetry.TimeString,
+        &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 6) {
+        valid = true;
     }
 
-    sendUSB(gpsStr);
+    if (valid) {
+        if (strlen(Config.GPSUSBObjName) && strcmp(Config.GPSUSBObjName, t->Telemetry.Callsign)) {
+            // Don't process this message since we are looking for other object
+            valid = false;
+        } else if ((Config.GPSUSBObjChannel >= 0) && (Config.GPSUSBObjChannel != t->Metadata.Channel)) {
+            // Don't process this message since we are looking for other channel
+            valid = false;
+        }
+    }
 
-    return i;
+    if (valid) {
+        // Convert latitude and longitude to 1E7 format and altitude to millimeters
+        int32_t lat_1E7 = (int32_t)(t->Telemetry.Latitude * 1E7);
+        int32_t lon_1E7 = (int32_t)(t->Telemetry.Longitude * 1E7);
+        int32_t alt_mm = t->Telemetry.Altitude * 1000;
+
+        // Get the time in seconds since the GPS epoch
+        // You will need to provide the actual date to this function
+        uint32_t time_since_gps_epoch = get_time_since_gps_epoch(t->Telemetry.TimeString);
+
+        uint8_t system_id = 1; // System ID of the sender
+        uint8_t component_id = 1; // Component ID of the sender
+
+        // Create a MAVLink GPS_RAW_INT message
+        mavlink_message_t gps_msg;
+        mavlink_msg_gps_raw_int_pack(system_id, component_id, &gps_msg, time_since_gps_epoch * 1E6, 3, lat_1E7, lon_1E7, alt_mm, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        // Create a MAVLink GLOBAL_POSITION_INT message
+        mavlink_message_t global_msg;
+        mavlink_msg_global_position_int_pack(system_id, component_id, &global_msg, 0, lat_1E7, lon_1E7, alt_mm, 0, 0, 0, 0, 0);
+
+        // Serialize the GPS_RAW_INT message
+        uint8_t gps_buffer[MAVLINK_MAX_PACKET_LEN];
+        mavlink_msg_to_send_buffer(gps_buffer, &gps_msg);
+
+        // Serialize the message
+        uint8_t global_buffer[MAVLINK_MAX_PACKET_LEN];
+        mavlink_msg_to_send_buffer(global_buffer, &global_msg);
+
+        // Send the message through USB
+        sendUSB((char*)gps_buffer);
+        sendUSB((char*)global_buffer);
+    }
+    return valid;
 }
 
 void *GpsUsbLoop( void *some_void_ptr ) {
@@ -210,15 +273,24 @@ void *GpsUsbLoop( void *some_void_ptr ) {
                 gpsUsbOpen = 1;
                 //LogMessage( "GPS USB Serial Port openned\n" );
                 received_t *dequeued_telemetry_ptr;
-
+                // Create a function pointer and assign it to either sendNmeaUsb or sendMavlinkUsb
+                GPSUsbSendFunction gpsUsbSendFunc;
+                if (strcmp(Config.GPSUSBOutput, "MAVLINK") == 0) {
+                    gpsUsbSendFunc = &sendMavlinkUsb; // Output Mavlink format
+                    LogMessage("USB output on %s: MAVlink\n", Config.GPSUSBPort);
+                } else {
+                    gpsUsbSendFunc = &sendNmeaUsb; // Output NMEA format
+                    LogMessage("USB output on %s: NMEA\n", Config.GPSUSBPort);
+                }
+                
                 // Keep looping until the parent quits
                 while ( true )
                 {
                     dequeued_telemetry_ptr = lifo_buffer_waitpop(&GPS_USB_Upload_Buffer);
-        
+
                     if(dequeued_telemetry_ptr != NULL)
                     {
-                        if(sendNmeaUsb(dequeued_telemetry_ptr ))
+                        if(gpsUsbSendFunc(dequeued_telemetry_ptr))
                         {
                             free(dequeued_telemetry_ptr);
                         }

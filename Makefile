@@ -8,7 +8,7 @@ EXE=gateway
 INDOPT= -bap -bl -blf -bli0 -brs -cbi0 -cdw -cs -ci4 -cli4 -i4 -ip0 -nbc -nce -lp -npcs -nut -pmt -psl -prs -ts4
 
 CC=gcc
-CFLAGS=-Wall -O3 #-std=c99 
+CFLAGS=-Wall -O3 -Wno-address-of-packed-member #-std=c99 
 LDFLAGS= -lm -lwiringPi -lwiringPiDev -lcurl -lncurses -lpthread -lpaho-mqtt3c -lgps
 RM=rm
 

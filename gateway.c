@@ -2265,10 +2265,15 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
     // GPSUSBSerial
+    *Config.GPSUSBPort = '\0';
+    *Config.GPSUSBOutput = '\0';
     *Config.GPSUSBObjName = '\0';
+    Config.GPSUSBObjChannel = -1;
     RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBPort", &Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
+    RegisterConfigString(MainSection, -1, "GPSUSBOutput", &Config.GPSUSBOutput, sizeof(Config.GPSUSBOutput), NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBObjName", &Config.GPSUSBObjName, sizeof(Config.GPSUSBObjName), NULL);
+    RegisterConfigInteger(MainSection, -1, "GPSUSBObjChannel", &Config.GPSUSBObjChannel, NULL);
 
     // AntennaTracker
     Config.EnableAntennaTracker = false;

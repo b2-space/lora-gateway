@@ -158,7 +158,9 @@ struct TConfig
 	char MQTTTopic[128];
 	int EnableGPSUSB;
 	char GPSUSBPort[30];
+	char GPSUSBOutput[30];
 	char GPSUSBObjName[30];
+	int GPSUSBObjChannel;
 	int EnableAntennaTracker;
 	char AntTrackTelemetryParse[50];
 	int AntTrackDebug;

@@ -158,6 +158,7 @@ struct TConfig
 	char MQTTTopic[128];
 	int EnableGPSUSB;
 	char GPSUSBPort[30];
+	int GPSUSBBaudrate;
 	char GPSUSBOutput[30];
 	char GPSUSBObjName[30];
 	int GPSUSBObjChannel;

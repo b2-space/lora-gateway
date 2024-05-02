@@ -505,99 +505,99 @@ void ChannelPrintf(int Channel, int row, int column, const char *format, ... )
 //    Method:   Set LoRa Power according to settings
 //////////////////////////////////////
 void
-setLoRaPower()
+setLoRaPower(int Channel)
 {
-  switch (Settings.LoRaPower) {
+  switch (Config.LoRaDevices[Channel].Power) {
    
     case LORA_POWER_2dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_2dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_2dBm);
     break;
      case LORA_POWER_3dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_3dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_3dBm);
     break;
      case LORA_POWER_4dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_4dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_4dBm);
     break;
      case LORA_POWER_5dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_5dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_5dBm);
     break;
      case LORA_POWER_6dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_6dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_6dBm);
     break;
      case LORA_POWER_7dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_7dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_7dBm);
     break;
      case LORA_POWER_8dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_8dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_8dBm);
     break;
      case LORA_POWER_9dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_9dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_9dBm);
     break;
      case LORA_POWER_10dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_10dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_10dBm);
     break;
      case LORA_POWER_11dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_11dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_11dBm);
     break;
     case LORA_POWER_12dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_12dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_12dBm);
     break;
     case LORA_POWER_13dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_13dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_13dBm);
     break;
     case LORA_POWER_14dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_14dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_14dBm);
     break;
     case LORA_POWER_15dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_15dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_15dBm);
     break;
     case LORA_POWER_16dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_16dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_16dBm);
     break;
     case LORA_POWER_17dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_17dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_17dBm);
     break;
     case LORA_POWER_20dBm:
-      writeRegister(REG_PA_DAC, PA_DAC_20);
-      writeRegister(REG_PA_OCP, PA_OCP_MAX_BOOST);
-      writeRegister(REG_PA_CONFIG, PA_20dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_20);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_MAX_BOOST);
+      writeRegister(Channel, REG_PA_CONFIG, PA_20dBm);
     break;
     default:
-      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
-      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
-      writeRegister(REG_PA_CONFIG, PA_13dBm);
+      writeRegister(Channel, REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(Channel, REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(Channel, REG_PA_CONFIG, PA_13dBm);
     break;
   }
 }
@@ -612,7 +612,7 @@ setMode( int Channel, uint8_t newMode )
     {
         case RF98_MODE_TX:
             writeRegister( Channel, REG_LNA, LNA_OFF_GAIN );    // TURN LNA OFF FOR TRANSMITT
-            setLoRaPower();
+            setLoRaPower(Channel);
             writeRegister( Channel, REG_OPMODE, newMode );
             currentMode = newMode;
             break;

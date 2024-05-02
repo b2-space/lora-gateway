@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.1"
+#define VERSION	"V1.12.2"
 bool run = TRUE;
 
 // RFM98
@@ -120,12 +120,54 @@ uint8_t currentMode = 0x81;
 
 // POWER AMPLIFIER CONFIG
 #define REG_PA_CONFIG               0x09
-#define PA_MAX_BOOST                0x8F
-#define PA_LOW_BOOST                0x81
-#define PA_MED_BOOST                0x8A
-#define PA_MAX_UK                   0x88
-#define PA_OFF_BOOST                0x00
+#define PA_OFF_BOOST                0x80
 #define RFO_MIN                     0x00
+typedef enum {
+  LORA_POWER_2dBm  =  2,
+  LORA_POWER_3dBm  =  3,
+  LORA_POWER_4dBm  =  4,
+  LORA_POWER_5dBm  =  5,
+  LORA_POWER_6dBm  =  6,
+  LORA_POWER_7dBm  =  7,
+  LORA_POWER_8dBm  =  8,
+  LORA_POWER_9dBm  =  9,
+  LORA_POWER_10dBm = 10,
+  LORA_POWER_11dBm = 11,
+  LORA_POWER_12dBm = 12,
+  LORA_POWER_13dBm = 13,
+  LORA_POWER_14dBm = 14,
+  LORA_POWER_15dBm = 15,
+  LORA_POWER_16dBm = 16,
+  LORA_POWER_17dBm = 17,
+  LORA_POWER_20dBm = 20
+} LoRa_power;
+
+// Reg PA values
+#define PA_2dBm                     0x80
+#define PA_3dBm                     0x81
+#define PA_4dBm                     0x82
+#define PA_5dBm                     0x83
+#define PA_6dBm                     0x84
+#define PA_7dBm                     0x85
+#define PA_8dBm                     0x86
+#define PA_9dBm                     0x87
+#define PA_10dBm                    0x88
+#define PA_11dBm                    0x89
+#define PA_12dBm                    0x8A
+#define PA_13dBm                    0x8B
+#define PA_14dBm                    0x8C
+#define PA_15dBm                    0x8D
+#define PA_16dBm                    0x8E
+#define PA_17dBm                    0x8F
+#define PA_20dBm                    0x8F
+
+// 20DBm High Power
+#define REG_PA_DAC                  0x4D
+#define PA_DAC_DEFAULT              0x84    // DAC for normal power
+#define PA_DAC_20                   0x87    // DAC for high power
+#define REG_PA_OCP                  0x0B
+#define PA_OCP_DEFAULT              0x2B    // Overcurrent for normal power
+#define PA_OCP_MAX_BOOST            0x3B    // Overcurrent for high power
 
 // LOW NOISE AMPLIFIER
 #define REG_LNA                     0x0C
@@ -459,6 +501,107 @@ void ChannelPrintf(int Channel, int row, int column, const char *format, ... )
 
 }
 
+/////////////////////////////////////
+//    Method:   Set LoRa Power according to settings
+//////////////////////////////////////
+void
+setLoRaPower()
+{
+  switch (Settings.LoRaPower) {
+   
+    case LORA_POWER_2dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_2dBm);
+    break;
+     case LORA_POWER_3dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_3dBm);
+    break;
+     case LORA_POWER_4dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_4dBm);
+    break;
+     case LORA_POWER_5dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_5dBm);
+    break;
+     case LORA_POWER_6dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_6dBm);
+    break;
+     case LORA_POWER_7dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_7dBm);
+    break;
+     case LORA_POWER_8dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_8dBm);
+    break;
+     case LORA_POWER_9dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_9dBm);
+    break;
+     case LORA_POWER_10dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_10dBm);
+    break;
+     case LORA_POWER_11dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_11dBm);
+    break;
+    case LORA_POWER_12dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_12dBm);
+    break;
+    case LORA_POWER_13dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_13dBm);
+    break;
+    case LORA_POWER_14dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_14dBm);
+    break;
+    case LORA_POWER_15dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_15dBm);
+    break;
+    case LORA_POWER_16dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_16dBm);
+    break;
+    case LORA_POWER_17dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_17dBm);
+    break;
+    case LORA_POWER_20dBm:
+      writeRegister(REG_PA_DAC, PA_DAC_20);
+      writeRegister(REG_PA_OCP, PA_OCP_MAX_BOOST);
+      writeRegister(REG_PA_CONFIG, PA_20dBm);
+    break;
+    default:
+      writeRegister(REG_PA_DAC, PA_DAC_DEFAULT);
+      writeRegister(REG_PA_OCP, PA_OCP_DEFAULT);
+      writeRegister(REG_PA_CONFIG, PA_13dBm);
+    break;
+  }
+}
+
 void
 setMode( int Channel, uint8_t newMode )
 {
@@ -469,7 +612,7 @@ setMode( int Channel, uint8_t newMode )
     {
         case RF98_MODE_TX:
             writeRegister( Channel, REG_LNA, LNA_OFF_GAIN );    // TURN LNA OFF FOR TRANSMITT
-            writeRegister( Channel, REG_PA_CONFIG, Config.LoRaDevices[Channel].Power ); // PA_MAX_UK
+            setLoRaPower();
             writeRegister( Channel, REG_OPMODE, newMode );
             currentMode = newMode;
             break;
@@ -2312,7 +2455,7 @@ void LoadConfigFile(void)
             Config.LoRaDevices[Channel].SpreadingFactor = SFToInt(SPREADING_11);
             Config.LoRaDevices[Channel].LowDataRateOptimize = 0;
             Config.LoRaDevices[Channel].AFC = FALSE;
-            Config.LoRaDevices[Channel].Power = PA_MAX_UK;
+            Config.LoRaDevices[Channel].Power = LORA_POWER_20dBm;
             Config.LoRaDevices[Channel].UplinkMode = -1;
             Config.LoRaDevices[Channel].UplinkTime = -1;
             Config.LoRaDevices[Channel].UplinkCycle = -1;
@@ -2336,9 +2479,14 @@ void LoadConfigFile(void)
 				LogMessage( "Channel %d UplinkTime %d Uplink Cycle %d\n", Channel, Config.LoRaDevices[Channel].UplinkTime, Config.LoRaDevices[Channel].UplinkCycle);
 
 				RegisterConfigInteger(MainSection, Channel, "Power", &Config.LoRaDevices[Channel].Power, NULL);
-
-
-				LogMessage( "Channel %d power set to %02Xh\n", Channel, Config.LoRaDevices[Channel].Power );
+                if (Config.LoRaDevices[Channel].Power > LORA_POWER_20dBm) {
+                    Config.LoRaDevices[Channel].Power = LORA_POWER_20dBm;
+                    LogMessage("Channel %d invalid power loaded (too high)\n");
+                } else if (Config.LoRaDevices[Channel].Power < LORA_POWER_2dBm) {
+                    Config.LoRaDevices[Channel].Power = LORA_POWER_2dBm;
+                    LogMessage("Channel %d invalid power loaded (too low)\n");
+                }
+				LogMessage( "Channel %d power set to %ddBm\n", Channel, Config.LoRaDevices[Channel].Power );
 				
 				RegisterConfigBoolean(MainSection, Channel, "SSDVUplink", &Config.LoRaDevices[Channel].SSDVUplink, NULL);
 				if (Config.LoRaDevices[Channel].SSDVUplink)
@@ -2359,8 +2507,6 @@ void LoadConfigFile(void)
 				RegisterConfigString(MainSection, Channel, "ChatPayload", Config.LoRaDevices[Channel].ChatPayloadID, sizeof(Config.LoRaDevices[Channel].ChatPayloadID), NULL);
 				LogMessage( "Channel %d Chat Mode Enabled to Payload %s\n", Channel, Config.LoRaDevices[Channel].ChatPayloadID);
 			}
-
-			RegisterConfigInteger(MainSection, Channel, "Power", &Config.LoRaDevices[Channel].Power, NULL);
 
 			RegisterConfigInteger(MainSection, Channel, "UplinkMode", &Config.LoRaDevices[Channel].UplinkMode, NULL);
 			if (Config.LoRaDevices[Channel].UplinkMode >= 0)

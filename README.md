@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 30/04/2024 - V1.12.2
+
+	LoRa power parameter in dBm. LoRa register configuration updated and refactored.
+
 ## 05/04/2024 - V1.12.1
 
 	GPSUSB updated to correct a bug, output SkylarkAAT as other possibility and select baudrate from gateway.txt.

@@ -187,11 +187,12 @@ int sendMavlinkUsb(received_t *t) {
 
         // Create a MAVLink GPS_RAW_INT message
         mavlink_message_t gps_msg;
-        mavlink_msg_gps_raw_int_pack(system_id, component_id, &gps_msg, time_since_gps_epoch * 1E6, 3, lat_1E7, lon_1E7, alt_mm, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        mavlink_msg_gps_raw_int_pack(system_id, component_id, &gps_msg, time_since_gps_epoch * 1E6, 3, lat_1E7, lon_1E7, alt_mm,
+            UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT8_MAX, alt_mm, 0, 0, 0, 0, 0);
 
         // Create a MAVLink GLOBAL_POSITION_INT message
         mavlink_message_t global_msg;
-        mavlink_msg_global_position_int_pack(system_id, component_id, &global_msg, 0, lat_1E7, lon_1E7, alt_mm, 0, 0, 0, 0, 0);
+        mavlink_msg_global_position_int_pack(system_id, component_id, &global_msg, 0, lat_1E7, lon_1E7, alt_mm, alt_mm, 0, 0, 0, UINT16_MAX);
 
         // Serialize the GPS_RAW_INT message
         uint8_t gps_buffer[MAVLINK_MAX_PACKET_LEN];

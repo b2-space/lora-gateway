@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 13/06/2024 - V1.12.3
+
+	SkylarkAAT output format removed.
+
 ## 30/04/2024 - V1.12.2
 
 	LoRa power parameter in dBm. LoRa register configuration updated and refactored.

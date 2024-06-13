@@ -82,7 +82,6 @@ AFC_1=Y
 #GPSUSBBaudrate=115200
 #GPSUSBOutput=NMEA
 #GPSUSBOutput=MAVLINK
-#GPSUSBOutput=SkylarkAAT
 #GPSUSBObjName=TTGO
 #GPSUSBObjChannel=0
 

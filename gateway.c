@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.2"
+#define VERSION	"V1.12.3"
 bool run = TRUE;
 
 // RFM98

@@ -159,6 +159,7 @@ struct TConfig
 	int EnableGPSUSB;
 	char GPSUSBPort[30];
 	int GPSUSBBaudrate;
+	int GPSUSBOutputFreq;
 	char GPSUSBOutput[30];
 	char GPSUSBObjName[30];
 	int GPSUSBObjChannel;

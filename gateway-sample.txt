@@ -80,9 +80,9 @@ AFC_1=Y
 #EnableGPSUSB=Y
 #GPSUSBPort=/dev/ttyUSB0
 #GPSUSBBaudrate=115200
+#GPSUSBOutputFreq=1
 #GPSUSBOutput=NMEA
 #GPSUSBOutput=MAVLINK
-#GPSUSBOutput=SkylarkAAT
 #GPSUSBObjName=TTGO
 #GPSUSBObjChannel=0
 

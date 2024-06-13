@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.2"
+#define VERSION	"V1.12.3"
 bool run = TRUE;
 
 // RFM98
@@ -2410,12 +2410,14 @@ void LoadConfigFile(void)
     // GPSUSBSerial
     *Config.GPSUSBPort = '\0';
     Config.GPSUSBBaudrate = 9600;
+    Config.GPSUSBOutputFreq = 0;
     *Config.GPSUSBOutput = '\0';
     *Config.GPSUSBObjName = '\0';
     Config.GPSUSBObjChannel = -1;
     RegisterConfigBoolean(MainSection, -1, "EnableGPSUSB", &Config.EnableGPSUSB, NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBPort", Config.GPSUSBPort, sizeof(Config.GPSUSBPort), NULL);
     RegisterConfigInteger(MainSection, -1, "GPSUSBBaudrate", &Config.GPSUSBBaudrate, NULL);
+    RegisterConfigInteger(MainSection, -1, "GPSUSBOutputFreq", &Config.GPSUSBOutputFreq, NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBOutput", Config.GPSUSBOutput, sizeof(Config.GPSUSBOutput), NULL);
     RegisterConfigString(MainSection, -1, "GPSUSBObjName", Config.GPSUSBObjName, sizeof(Config.GPSUSBObjName), NULL);
     RegisterConfigInteger(MainSection, -1, "GPSUSBObjChannel", &Config.GPSUSBObjChannel, NULL);

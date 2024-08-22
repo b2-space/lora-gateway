@@ -179,12 +179,18 @@ void sendMavlinkUsb() {
 
 int createMavlinkUsb(received_t *t) {
     bool valid = false;
+    char board_id[30];
+    uint32_t runtime;
+    int board_status;
+    int gnss_fix;
+    char date_str[30];
 
     // Parse the custom telemetry string
     char *telemetry_str = t->Message;
-    if (sscanf(telemetry_str, "%[^,],%lld,%8[^,],%lf,%lf,%lld",
-        t->Telemetry.Callsign, &t->Telemetry.SentenceId, t->Telemetry.TimeString,
-        &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 6) {
+    if (sscanf(telemetry_str, "%[^,],%lld,%[^,],%llu,%lld,%lld,%8[^,],%8[^,],%lf,%lf,%lld",
+        t->Telemetry.Callsign, &t->Telemetry.SentenceId, board_id, &runtime, &board_status,
+        &gnss_fix, date_str, t->Telemetry.TimeString,
+        &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 11) {
         valid = true;
     }
 

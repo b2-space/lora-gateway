@@ -26,10 +26,81 @@ extern int gpsUsbOpen;
 
 volatile int fd;
 
+bool manualAATmodeOn = false;
+
 // Function pointer to select either NMEA or MAVLink output type
 typedef int (*GPSUsbCreateFunction)(received_t *t);
 typedef void (*GPSUsbSendFunction)();
 
+// Create a function pointer and assign it to either sendNmeaUsb or sendMavlinkUsb
+GPSUsbCreateFunction gpsUsbCreateFunc;
+GPSUsbSendFunction gpsUsbSendFunc;
+
+static char* read_file_to_string(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        LogMessage("ManualAAT: Error opening file: %s\n", filename);
+        return NULL;
+    }
+
+    // Determine file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Allocate memory for the string
+    char* content = (char*)malloc(file_size + 1);
+    if (content == NULL) {
+        LogMessage("ManualAAT: Memory allocation failed\n");
+        fclose(file);
+        return NULL;
+    }
+
+    // Read file contents into the string
+    size_t bytes_read = fread(content, 1, file_size, file);
+    if (bytes_read < file_size) {
+        LogMessage("ManualAAT: Error reading file\n");
+        free(content);
+        fclose(file);
+        return NULL;
+    }
+
+    // Null-terminate the string
+    content[file_size] = '\0';
+
+    fclose(file);
+    return content;
+}
+
+/**
+ * @brief Turn manual mode on and send packet, or turn it off and keep forwarding received packets
+ * 
+ * @param enabled true for manual mode, false for normal mode
+ */
+void gpsUsbManualMode(bool enabled) {
+    if (gpsUsbOpen) {
+        if (enabled) {
+            received_t manualData;
+            const char* filename = "manualAATstring.txt";
+            char* fileContent = read_file_to_string(filename);
+
+            if (fileContent != NULL) {
+                LogMessage("ManualAAT: File contents:\n%s\n", fileContent);
+                strcpy(manualData.Message, fileContent);
+                free(fileContent);  // Don't forget to free the allocated memory
+                gpsUsbCreateFunc(&manualData);
+                gpsUsbSendFunc();
+            }
+            manualAATmodeOn = true;
+        } else {
+            /* Empty buffer */
+            while(lifo_buffer_pop(&GPS_USB_Upload_Buffer) != NULL);
+            manualAATmodeOn = false;
+        }
+    } else {
+        LogMessage("ManualAAT: error, gpsusb not open\n");
+    }
+}
 
 int connectUSB(char* portname, int baudRate) {
     fd = serialOpen(portname, baudRate);
@@ -241,9 +312,6 @@ void *GpsUsbLoop( void *some_void_ptr ) {
                 gpsUsbOpen = 1;
                 //LogMessage( "GPS USB Serial Port openned\n" );
                 received_t *dequeued_telemetry_ptr;
-                // Create a function pointer and assign it to either sendNmeaUsb or sendMavlinkUsb
-                GPSUsbCreateFunction gpsUsbCreateFunc;
-                GPSUsbSendFunction gpsUsbSendFunc;
                 if (strcmp(Config.GPSUSBOutput, "MAVLINK") == 0) {
                     // Output Mavlink format
                     gpsUsbCreateFunc = &createMavlinkUsb;
@@ -259,19 +327,21 @@ void *GpsUsbLoop( void *some_void_ptr ) {
                 // Keep looping until the parent quits
                 while ( true )
                 {
-                    dequeued_telemetry_ptr = lifo_buffer_waitpop(&GPS_USB_Upload_Buffer);
+                    if (manualAATmodeOn) {
+                        dequeued_telemetry_ptr = lifo_buffer_waitpop(&GPS_USB_Upload_Buffer);
 
-                    if(dequeued_telemetry_ptr != NULL)
-                    {
-                        gpsUsbCreateFunc(dequeued_telemetry_ptr);
-                        free(dequeued_telemetry_ptr);
-                        gpsUsbSendFunc();
-                    }
-                    else
-                    {
-                        /* NULL returned: We've been asked to quit */
-                        /* Don't bother free()ing stuff, as application is quitting */
-                        break;
+                        if(dequeued_telemetry_ptr != NULL)
+                        {
+                            gpsUsbCreateFunc(dequeued_telemetry_ptr);
+                            free(dequeued_telemetry_ptr);
+                            gpsUsbSendFunc();
+                        }
+                        else
+                        {
+                            /* NULL returned: We've been asked to quit */
+                            /* Don't bother free()ing stuff, as application is quitting */
+                            break;
+                        }
                     }
 	            }
             }

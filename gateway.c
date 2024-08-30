@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.3"
+#define VERSION	"V1.12.4"
 bool run = TRUE;
 
 // RFM98
@@ -2717,6 +2717,20 @@ ProcessKeyPress( int ch )
 
             help_win_displayed = 0;
             
+            break;
+        case 'm':
+            if (Config.EnableGPSUSB && Config.GPSUSBPort) {
+                /* Toggle AAT Manual mode: send custom data from user */
+                if (Channel == 1) {
+                    /* Upper case, turn AAT Manual mode ON and send custom data*/
+                    LogMessage("ManualAAT mode ON\n");
+                    gpsUsbManualMode(true);
+                } else {
+                    /* Lower case, turn AAT Manual mode OFF and keep forwarding data from HAB */
+                    LogMessage("ManualAAT mode OFF\n");
+                    gpsUsbManualMode(false);
+                }
+            }
             break;
         default:
             // LogMessage("KeyPress %d\n", ch);

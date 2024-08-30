@@ -3,5 +3,6 @@
     void disconnectUSB();
     void sendStringUSB(char* str);
     void *GpsUsbLoop( void *some_void_ptr );
+    void gpsUsbManualMode(bool enabled);
 #define GPS_USB_SER_H_
 #endif

@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 02/09/2024 - V1.12.4
+
+	ManualAAT mode with key 'M' to send data from a string to AAT. Turn off with 'm'
+	
 ## 13/06/2024 - V1.12.3
 
 	SkylarkAAT output format removed.

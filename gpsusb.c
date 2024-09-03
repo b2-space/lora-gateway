@@ -17,6 +17,7 @@
 #include "global.h"
 #include "lifo_buffer.h"
 #include "mavlink/common/mavlink.h"
+#include "antennatracker.h"
 
 extern lifo_buffer_t GPS_USB_Upload_Buffer;
 
@@ -257,6 +258,24 @@ int createMavlinkUsb(received_t *t) {
         t->Telemetry.Callsign, &t->Telemetry.SentenceId, t->Telemetry.TimeString,
         &t->Telemetry.Latitude, &t->Telemetry.Longitude, &t->Telemetry.Altitude) == 6) {
         valid = true;
+    }
+
+    if (t->Telemetry.Altitude > 5000) {
+        /* AAT does not support this altitude: change lat, lon, alt for same angles with lower altitude */
+        if (Config.EnableAntennaTracker) {
+            double lat_new, lon_new, alt_new;
+            int result = anttrack_calc_nearer_lower_point(t->Telemetry.Latitude, t->Telemetry.Longitude, t->Telemetry.Altitude,
+                5000.0, &lat_new, &lon_new, &alt_new);
+            if (result == 0) {
+                t->Telemetry.Latitude = lat_new;
+                t->Telemetry.Longitude = lon_new;
+                t->Telemetry.Altitude = alt_new;
+            } else {
+                LogMessage("GPSUSB Error: ant track interpolation failed\n");
+            }
+        } else {
+            LogMessage("GPSUSB Error: Alt>5000 but AntTrack disabled\n");
+        }
     }
 
     if (valid) {

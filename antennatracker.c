@@ -96,6 +96,57 @@ static double calculate_elevation(double lat1, double lon1, double alt1, double 
     return elevation;
 }
 
+// Function to calculate the new position (lat2, lon2, alt2)
+// from gateway_position to initial destination (lat1, lon1, alt1)
+// following same bearing and elevation but stopping at given altitude_limit
+int anttrack_calc_nearer_lower_point(double lat1, double lon1, double alt1, double altitude_limit, double *lat2, double *lon2, double *alt2) {
+    if (gateway_position_rx && (lat2 != NULL)  && (lon2 != NULL) && (alt2 != NULL)) {
+        // Check altitude limit is valid
+        if ((altitude_limit <= gateway_position.alt) || (alt1 <= altitude_limit)) {
+            LogMessage("AntTrack: invalid altitude limit\n");
+            return -1;
+        }
+
+        // Convert input angles to radians
+        double lat_dest_rad = lat1 * DEG_TO_RAD;
+        double lon_dest_rad = lon1 * DEG_TO_RAD;
+
+        // Calculate bearing and elevation
+        double bearing = calculate_bearing(gateway_position.lat, gateway_position.lon, lat_dest_rad, lon_dest_rad);
+        double elevation = calculate_elevation(gateway_position.lat, gateway_position.lon, gateway_position.alt,
+            lat_dest_rad, lon_dest_rad, alt1);
+
+        // Convert direction angles to radians
+        double bearing_rad = bearing * DEG_TO_RAD;
+        double elevation_rad = elevation * DEG_TO_RAD;
+
+        // Calculate the altitude difference needed to reach altitude_limit
+        double delta_altitude = altitude_limit - gateway_position.alt;
+
+        // Calculate the horizontal distance required to reach altitude_limit
+        double horizontal_distance = delta_altitude / tan(elevation_rad);
+
+        // Calculate the angular distance
+        double angular_distance = horizontal_distance / EARTH_RADIUS;
+
+        // Calculate the new latitude in radians
+        double lat2_rad = asin(sin(gateway_position.lat) * cos(angular_distance) +
+                            cos(gateway_position.lat) * sin(angular_distance) * cos(bearing_rad));
+
+        // Calculate the new longitude in radians
+        double lon2_rad = gateway_position.lon + atan2(sin(bearing_rad) * sin(angular_distance) * cos(gateway_position.lat),
+                                        cos(angular_distance) - sin(gateway_position.lat) * sin(lat2_rad));
+
+        // Convert lat2 and lon2 back to degrees
+        *lat2 = lat2_rad / DEG_TO_RAD;
+        *lon2 = lon2_rad / DEG_TO_RAD;
+
+        // Set the altitude to altitude_limit
+        *alt2 = altitude_limit;
+    }
+    return 0;
+}
+
 void anttrack_set_gateway_position(double lat, double lon, double alt) {
     gateway_position.lat = lat * DEG_TO_RAD;
     gateway_position.lon = lon * DEG_TO_RAD;

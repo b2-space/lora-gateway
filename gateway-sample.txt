@@ -91,3 +91,4 @@ EnableAntennaTracker=Y
 AntTrackDebug=Y
 AntTrackLog=Y
 #AntTrackObjName=TTGO
+#AntTrackObjChannel=0

@@ -2426,11 +2426,13 @@ void LoadConfigFile(void)
 	Config.AntTrackDebug = false;
 	Config.AntTrackLog = false;
     *Config.AntTrackObjName = '\0';
+    Config.AntTrackObjChannel = -1;
     RegisterConfigBoolean(MainSection, -1, "EnableAntennaTracker", &Config.EnableAntennaTracker, NULL);
     RegisterConfigString(MainSection, -1, "AntTrackTelemetryParse", Config.AntTrackTelemetryParse, sizeof(Config.GPSUSBPort), NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackDebug", &Config.AntTrackDebug, NULL);
     RegisterConfigBoolean(MainSection, -1, "AntTrackLog", &Config.AntTrackLog, NULL);
     RegisterConfigString(MainSection, -1, "AntTrackObjName", Config.AntTrackObjName, sizeof(Config.AntTrackObjName), NULL);
+    RegisterConfigInteger(MainSection, -1, "AntTrackObjChannel", &Config.AntTrackObjChannel, NULL);
 
     if (Config.EnableAntennaTracker && Config.altitude && Config.longitude && Config.altitude) {
         if (Config.AntTrackDebug) {

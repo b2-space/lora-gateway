@@ -167,6 +167,7 @@ struct TConfig
 	int AntTrackDebug;
 	int AntTrackLog;
 	char AntTrackObjName[30];
+	int AntTrackObjChannel;
 };
 
 typedef struct {

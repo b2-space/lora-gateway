@@ -353,6 +353,7 @@ Change History
 ## 03/09/2024 - V1.12.5
 
 	GPSUSB with Mavlink interpolates forwarded positions with altitude > 5000.
+	AntTrack filter by channel
 	
 ## 02/09/2024 - V1.12.4
 

@@ -223,9 +223,10 @@ void anttrack_set_object_telemetry(char *telemetry, unsigned int channel) {
     // TODO: telemetry may vary. Set this in gateway.txt config
     int num_params = sscanf(telemetry, "%29[^,],%*[^,],%*[^,],%lf,%lf,%d", object_name, &lat, &lon, &alt_int);
 
-    // If sscanf found all 4 params containing object name and some data, and object name matches or looking for any
+    // If sscanf found all 4 params containing object name and some data, and object name matches and channel matches or looking for any
     if (num_params == 4 && (lat != 0.0 || lon != 0.0 || alt_int != 0) && strlen(object_name) &&
-        (!strlen(Config.AntTrackObjName) || !strcmp(Config.AntTrackObjName, object_name))) {
+        (!strlen(Config.AntTrackObjName) || !strcmp(Config.AntTrackObjName, object_name)) &&
+        ((Config.AntTrackObjChannel < 0) || (Config.AntTrackObjChannel == channel))) {
         alt = alt_int;
         anttrack_set_object_position(lat, lon, alt, channel, object_name);
     }
@@ -238,7 +239,7 @@ void *anttrack_loop( void *void_ptr ) {
     // Open a connection to the GPSD daemon
     result = gps_open("localhost", DEFAULT_GPSD_PORT, &gps_data);
     if (result != 0) {
-        LogError("Error opening GPSD connection: ", gps_errstr(result));
+        LogMessage("Error opening GPSD connection: %s\n", gps_errstr(result));
     } else {
         (void) gps_stream(&gps_data, WATCH_ENABLE | WATCH_JSON, NULL);
         while (!anttrack_stop) {
@@ -247,7 +248,7 @@ void *anttrack_loop( void *void_ptr ) {
                 // Request the current GPS data
                 result = gps_read(&gps_data, NULL, 0);
                 if (result < 0) {
-                    LogError("Error reading GPS data: ", gps_errstr(result));
+                    LogMessage("Error reading GPS data: %s\n", gps_errstr(result));
                 } else if (result > 0){
                     // Check if latitude and longitude data has been received
                     if ((gps_data.set & TIME_SET) && (gps_data.set & LATLON_SET) && (gps_data.set & ALTITUDE_SET) &&

@@ -351,9 +351,11 @@ void *GpsUsbLoop( void *some_void_ptr ) {
 
                         if(dequeued_telemetry_ptr != NULL)
                         {
-                            gpsUsbCreateFunc(dequeued_telemetry_ptr);
+                            if (gpsUsbCreateFunc(dequeued_telemetry_ptr) > 0) {
+                                // Send only if valid message created
+                                gpsUsbSendFunc();
+                            }
                             free(dequeued_telemetry_ptr);
-                            gpsUsbSendFunc();
                         }
                         else
                         {

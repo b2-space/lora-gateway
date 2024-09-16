@@ -346,7 +346,7 @@ void *GpsUsbLoop( void *some_void_ptr ) {
                 // Keep looping until the parent quits
                 while ( true )
                 {
-                    if (manualAATmodeOn) {
+                    if (!manualAATmodeOn) {
                         dequeued_telemetry_ptr = lifo_buffer_waitpop(&GPS_USB_Upload_Buffer);
 
                         if(dequeued_telemetry_ptr != NULL)

@@ -91,6 +91,10 @@ void gpsUsbManualMode(bool enabled) {
                 free(fileContent);  // Don't forget to free the allocated memory
                 gpsUsbCreateFunc(&manualData);
                 gpsUsbSendFunc();
+                if (Config.EnableAntennaTracker) {
+                    // Calculate azimuth and elevation for manual string
+                    anttrack_set_object_telemetry(fileContent + 2, 0); // Exclude starting $$ from module name, use channel 0 by default
+                }
             }
             manualAATmodeOn = true;
         } else {
@@ -318,6 +322,7 @@ int createMavlinkUsb(received_t *t) {
     }
 
 	if (valid) {
+        LogMessage("Mavlink from %s to USB\n", t->Telemetry.Callsign);
 		return (mavlink_gps_buffer_len + mavlink_global_buffer_len); // Success
 	} else {
 		return 0;

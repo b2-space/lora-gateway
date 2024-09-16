@@ -350,6 +350,11 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 16/09/2024 - V1.12.6
+
+	GPSUSB manual mode bug fix.
+	Manual mode also prints antenna tracker angles.
+
 ## 03/09/2024 - V1.12.5
 
 	GPSUSB with Mavlink interpolates forwarded positions with altitude > 5000.

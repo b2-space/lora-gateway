@@ -232,6 +232,29 @@ void anttrack_set_object_telemetry(char *telemetry, unsigned int channel) {
     }
 }
 
+double anttrack_get_3ddist_from_telemetry(char *telemetry, unsigned int channel) {
+    char object_name[30];
+    double lat, lon, alt;
+    int alt_int;
+    double distance_3d = 0.0;
+
+    // Parse 1sts, 4th 5th and 6th fields of telemetry as name, lat, lon, alt
+    // TODO: telemetry may vary. Set this in gateway.txt config
+    int num_params = sscanf(telemetry, "%29[^,],%*[^,],%*[^,],%lf,%lf,%d", object_name, &lat, &lon, &alt_int);
+
+    // If sscanf found all 4 params containing object name and some data, and object name matches and channel matches or looking for any
+    if (num_params == 4 && (lat != 0.0 || lon != 0.0 || alt_int != 0) && strlen(object_name)) {
+        alt = alt_int;
+        if (channel < GW_NUM_CHANNELS) {
+            if (gateway_position_rx) {
+                distance_3d = calculate_3d_distance(gateway_position.lat, gateway_position.lon, gateway_position.alt,
+                    lat * DEG_TO_RAD, lon * DEG_TO_RAD, alt);
+            }
+        }
+    }
+    return distance_3d;
+}
+
 void *anttrack_loop( void *void_ptr ) {
     struct gps_data_t gps_data;
     int result;

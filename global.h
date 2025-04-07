@@ -75,6 +75,7 @@ struct TLoRaDevice
 	int UplinkCycle;
 	int IdleUplink;
 	int SSDVUplink;
+	char UplinkMessagePlain[256];
 	char UplinkMessage[256];
 	
 	// Telnet uplink

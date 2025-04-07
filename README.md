@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 07/04/2025 - V1.12.7
+
+	Change telemetry log for a CSV with signal quality and 3D distance information.
+
 ## 16/09/2024 - V1.12.6
 
 	GPSUSB manual mode bug fix.

@@ -141,12 +141,13 @@ void ProcessJSONClientLine(int connfd, char *line)
 			value++;
 			
 			LogMessage("LoRa[%d]: To send '%s'\n", channel, value);
+			
+			strcpy(Config.LoRaDevices[channel].UplinkMessagePlain, value);
 	
 			if (*Config.UplinkCode)
 			{
 				EncryptMessage(Config.UplinkCode, value+1);
 			}
-			
 			strcpy(Config.LoRaDevices[channel].UplinkMessage, value);
 		}
 	}

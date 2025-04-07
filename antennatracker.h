@@ -10,4 +10,5 @@ int anttrack_calc_nearer_lower_point(double lat1, double lon1, double alt1, doub
 void anttrack_set_gateway_position(double lat, double lon, double alt);
 void anttrack_set_object_position(double lat, double lon, double alt, unsigned int channel, char *object_name);
 void anttrack_set_object_telemetry(char *telemetry, unsigned int channel);
+double anttrack_get_3ddist_from_telemetry(char *telemetry, unsigned int channel);
 void *anttrack_loop(void *void_ptr);

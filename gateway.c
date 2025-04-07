@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.6"
+#define VERSION	"V1.12.7"
 bool run = TRUE;
 
 // RFM98
@@ -386,24 +386,105 @@ void LogPacket( rx_metadata_t *Metadata, int Bytes, unsigned char MessageType )
     }
 }
 
-void LogTelemetryPacket(int Channel, char *Telemetry)
+void LogTelemetryInit()
 {
-    // if (Config.EnableTelemetryLogging)
+    FILE *fp = fopen("data_log.csv", "a+");
+    if (fp != NULL) {
+        // Always write the header
+        fprintf(fp, "Date,Time,Channel,System,SNR,RSSI,Frequency,FreqError,Bytes,3DDist,Type,Payload\n");
+        fclose(fp);
+    }
+}
+
+void LogTelemetryPacket(int Channel, char *telemetry_str, received_t *rx_message)
+{
+    FILE *fp;
+
+    if ((fp = fopen("data_log.csv", "a")) != NULL)
     {
-        FILE *fp;
+        time_t now;
+        struct tm *tm;
 
-        if ( ( fp = fopen( "telemetry.txt", "at" ) ) != NULL )
-        {
-            time_t now;
-            struct tm *tm;
+        now = time(0);
+        tm = localtime(&now);
 
-            now = time( 0 );
-            tm = localtime( &now );
+        char id[10];
+        // Locate the position of the first comma in telemetry_str
+        const char *comma_pos = strchr(telemetry_str + 2, ',');
+        if (comma_pos != NULL) {
+            // Calculate the length of the <id> field
+            size_t id_length = comma_pos - (telemetry_str + 2);
+            if (id_length > 9) {
+                id_length = 9;  // Limit to 9 characters to leave space for null terminator
+            }
 
-            fprintf( fp, "%02d:%02d:%02d - %d - %s\n", tm->tm_hour, tm->tm_min, tm->tm_sec, Channel, Telemetry);
-
-            fclose( fp );
+            // Copy the <id> field to a 10-char length string
+            strncpy(id, telemetry_str + 2, id_length);
+            id[id_length] = '\0';  // Null-terminate the string
+        } else {
+            // Handle case where no comma is found (optional)
+            char id[10] = "UNKNOWN";
         }
+
+        fprintf(fp, "%02d/%02d/%04d,%02d:%02d:%02d,%d,%s,%d,%d,%.3lf,%.3lf,%d,%.0lf,%s,%s\n",
+            tm->tm_mday, (tm->tm_mon + 1), (tm->tm_year + 1900),
+            tm->tm_hour, tm->tm_min, tm->tm_sec,
+            Channel,
+            id,  // Use the extracted <id>
+            rx_message->Metadata.SNR,
+            rx_message->Metadata.RSSI,
+            rx_message->Metadata.Frequency * 1000,  // Frequency in kHz
+            rx_message->Metadata.FrequencyError * 1000,  // Frequency error in kHz
+            rx_message->Bytes,
+            anttrack_get_3ddist_from_telemetry(telemetry_str, Channel),
+            "Telemetry",  // Log type
+            telemetry_str);  // Payload
+
+        fclose(fp);
+    }
+}
+
+void LogTelemetryCommand(int Channel, char *command_str)
+{
+    FILE *fp;
+
+    if ((fp = fopen("data_log.csv", "a")) != NULL)
+    {
+        time_t now;
+        struct tm *tm;
+
+        now = time(0);
+        tm = localtime(&now);
+
+        char id[10];
+        // Locate the position of the first comma in command_str
+        const char *comma_pos = strchr(command_str + 1, '/');
+        if (comma_pos != NULL) {
+            // Calculate the length of the <id> field
+            size_t id_length = comma_pos - (command_str + 1);
+            if (id_length > 9) {
+                id_length = 9;  // Limit to 9 characters to leave space for null terminator
+            }
+
+            // Copy the <id> field to a 10-char length string
+            strncpy(id, command_str + 1, id_length);
+            id[id_length] = '\0';  // Null-terminate the string
+        } else {
+            // Handle case where no comma is found (optional)
+            char id[10] = "UNKNOWN";
+        }
+
+        fprintf(fp, "%02d/%02d/%04d,%02d:%02d:%02d,%d,%s,,,%.3lf,,%d,,%s,%s\n",
+                tm->tm_mday, (tm->tm_mon + 1), (tm->tm_year + 1900),
+                tm->tm_hour, tm->tm_min, tm->tm_sec,
+                Channel,
+                id,  // Use the extracted <id>
+                Config.LoRaDevices[Channel].Frequency * 1000,  // Current frequency in kHz
+                strlen(command_str),
+                "Command",  // Log type
+                command_str);  // Payload
+
+        fclose(fp);
     }
 }
 
@@ -1288,7 +1369,7 @@ int ProcessTelemetryMessage(int Channel, received_t *Received)
 
             *endmessage = '\0';
 
-			LogTelemetryPacket(Channel, startmessage);
+			LogTelemetryPacket(Channel, startmessage, Received);
 
             if (Config.EnableAntennaTracker) {
                 anttrack_set_object_telemetry(startmessage + 2, Channel); // Exclude starting $$ from module name
@@ -1848,7 +1929,8 @@ void SendUplinkMessage(int Channel)
 	if (*Config.LoRaDevices[Channel].UplinkMessage)
 	{
 		LogMessage("%02d:%02d:%02d Ch%d - Send uplink message '%s'\n", tm->tm_hour, tm->tm_min, tm->tm_sec, Channel, Config.LoRaDevices[Channel].UplinkMessage);
-		SendLoRaData(Channel, Config.LoRaDevices[Channel].UplinkMessage, strlen(Config.LoRaDevices[Channel].UplinkMessage)+1);
+		LogTelemetryCommand(Channel, Config.LoRaDevices[Channel].UplinkMessagePlain);
+        SendLoRaData(Channel, Config.LoRaDevices[Channel].UplinkMessage, strlen(Config.LoRaDevices[Channel].UplinkMessage)+1);
 		if (!Config.LoRaDevices[Channel].ChatMode)
 		{
 			// Not re-sending
@@ -3157,6 +3239,9 @@ int main( int argc, char **argv )
     // Initializes the structure used for storing calling mode settings
     callingModeSettings[0].Channel = -1;
     callingModeSettings[1].Channel = -1;
+
+    // Initialise the telemetry log
+    LogTelemetryInit();
 
     LogMessage( "Starting now ...\n" );
 

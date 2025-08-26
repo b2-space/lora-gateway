@@ -2489,6 +2489,14 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTClient", Config.MQTTClient, sizeof(Config.MQTTClient), NULL);
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
+    RegisterConfigBoolean(MainSection, -1, "UseMQTT2", &Config.EnableMQTT2, NULL);
+    RegisterConfigString(MainSection, -1, "MQTTHost2", Config.MQTTHost2, sizeof(Config.MQTTHost2), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTPort2", Config.MQTTPort2, sizeof(Config.MQTTPort2), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTUser2", Config.MQTTUser2, sizeof(Config.MQTTUser2), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTPass2", Config.MQTTPass2, sizeof(Config.MQTTPass2), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTClient2", Config.MQTTClient2, sizeof(Config.MQTTClient2), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTTopic2", Config.MQTTTopic2, sizeof(Config.MQTTTopic2), NULL);
+
     // GPSUSBSerial
     *Config.GPSUSBPort = '\0';
     Config.GPSUSBBaudrate = 9600;
@@ -3136,7 +3144,26 @@ int main( int argc, char **argv )
         strcpy(mqttConnection->topic, Config.MQTTTopic);
         strcpy(mqttConnection->clientId, Config.MQTTClient);
 
-		if ( pthread_create (&MQTTThread, NULL, MQTTLoop, mqttConnection))
+        mqtt_connect_t *mqttConnections[] = {
+            mqttConnection,
+            NULL,
+            NULL
+        }
+
+        if (Config.UseMQTT2)
+        {
+            mqtt_connect_t *mqttConnection2 = malloc(sizeof *mqttConnection);
+
+            strcpy(mqttConnection2->host, Config.MQTTHost2);
+            strcpy(mqttConnection2->port, Config.MQTTPort2);
+            strcpy(mqttConnection2->user, Config.MQTTUser2);
+            strcpy(mqttConnection2->pass, Config.MQTTPass2);
+            strcpy(mqttConnection2->topic, Config.MQTTTopic2);
+            strcpy(mqttConnection2->clientId, Config.MQTTClient2);
+            mqttConnections[1] = mqttConnection2;
+        }
+
+		if ( pthread_create (&MQTTThread, NULL, MQTTLoop, mqttConnections))
 		{
 			fprintf( stderr, "Error creating MQTT thread\n" );
             free(mqttConnection);

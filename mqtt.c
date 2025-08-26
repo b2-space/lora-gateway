@@ -138,7 +138,7 @@ bool UploadMQTTPacket(mqtt_connect_t * mqttConnection, received_t * t )
     return true;
 }
 
-void *MQTTLoop( mqtt_connect_t *mqttConnection )
+void *MQTTLoop( mqtt_connect_t *mqttConnections[] )
 {
     if ( Config.EnableMQTT )
     {
@@ -151,12 +151,20 @@ void *MQTTLoop( mqtt_connect_t *mqttConnection )
 
             if(dequeued_telemetry_ptr != NULL)
             {
-                if(UploadMQTTPacket(mqttConnection, dequeued_telemetry_ptr ))
+                size_t i = 0;
+                bool free_rx_message = true;
+                /* Iterate through MQTT connections*/
+                while (mqttConnections[i] != NULL)
                 {
-                    free(dequeued_telemetry_ptr);
+                    free_rx_message &= UploadMQTTPacket(mqttConnection, dequeued_telemetry_ptr);
+                    i++;
                 }
-                else
+                if (free_rx_message)
                 {
+                    /* Free message if was successfully send through all connections */
+                    free(dequeued_telemetry_ptr);
+                } else {
+                    /* Try to requeue if not send though all connections */
                     if(!lifo_buffer_requeue(&MQTT_Upload_Buffer, dequeued_telemetry_ptr))
                     {
                         /* Requeue failed, drop packet */

@@ -72,6 +72,15 @@ AFC_1=Y
 #MQTTTopic=topic_name
 # example MQTTTopic=incoming/payloads/$PAYLOAD$/$GATEWAY$/sentence
 
+# MQTT Second connection (only if EnableMQTT)
+#UseMQTT2=Y
+#MQTTHost2=mqtt_host
+#MQTTPort2=1883
+#MQTTUser2=mqtt_user
+#MQTTPass2=mqtt_password
+#MQTTClient2=mqtt_client_name
+#MQTTTopic2=topic_name
+
 # Dump config
 #DumpBuffer=Y
 #DumpFile=./LORA_dump

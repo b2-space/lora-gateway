@@ -157,6 +157,9 @@ struct TConfig
 	char MQTTPass[32];
 	char MQTTClient[16];
 	char MQTTTopic[128];
+	int ListenMQTT;
+	char MQTTListenerClient[16];
+	char MQTTListenerTopic[128];
 	int EnableGPSUSB;
 	char GPSUSBPort[30];
 	int GPSUSBBaudrate;

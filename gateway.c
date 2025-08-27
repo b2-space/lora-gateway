@@ -2488,6 +2488,9 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTPass", Config.MQTTPass, sizeof(Config.MQTTPass), NULL);
     RegisterConfigString(MainSection, -1, "MQTTClient", Config.MQTTClient, sizeof(Config.MQTTClient), NULL);
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
+    RegisterConfigBoolean(MainSection, -1, "ListenMQTT", &Config.ListenMQTT, NULL);
+    RegisterConfigString(MainSection, -1, "MQTTListenerClient", Config.MQTTListenerClient, sizeof(Config.MQTTListenerClient), NULL);
+    RegisterConfigString(MainSection, -1, "MQTTListenerTopic", Config.MQTTListenerTopic, sizeof(Config.MQTTListenerTopic), NULL);
 
     // GPSUSBSerial
     *Config.GPSUSBPort = '\0';
@@ -3038,7 +3041,7 @@ int main( int argc, char **argv )
     int ch;
     int LoopPeriod, MSPerLoop;
 	int Channel;
-    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread, GpsUsbThread, AntTrackGpsThread;
+    pthread_t SSDVThread, FTPThread, NetworkThread, SondehubThread, ServerThread, TelnetThread, DataportThread, ChatportThread, MQTTThread, MQTTListenerThread, GpsUsbThread, AntTrackGpsThread;
 	struct TServerInfo JSONInfo, TelnetInfo, DataportInfo, ChatportInfo;
 
 	atexit(bye);
@@ -3142,6 +3145,27 @@ int main( int argc, char **argv )
             free(mqttConnection);
 			return 1;
 		}
+
+        if (Config.ListenMQTT)
+        {
+		    mqtt_connect_t *mqttConnectionListen = malloc(sizeof *mqttConnection);
+            strcpy(mqttConnectionListen->host, Config.MQTTHost);
+            strcpy(mqttConnectionListen->port, Config.MQTTPort);
+            strcpy(mqttConnectionListen->user, Config.MQTTUser);
+            strcpy(mqttConnectionListen->pass, Config.MQTTPass);
+            strcpy(mqttConnectionListen->topic, Config.MQTTListenerTopic);
+            if (strcmp(Config.MQTTListenerClient, Config.MQTTClient) == 0)
+            {
+                fprintf( stderr, "Warning: MQTT client names should be different\n" );
+            }
+            strcpy(mqttConnectionListen->clientId, Config.MQTTListenerClient);
+            if ( pthread_create (&MQTTListenerThread, NULL, MQTTListenerLoop, mqttConnection))
+            {
+                fprintf( stderr, "Error creating MQTT Listener thread\n" );
+                free(mqttConnection);
+                return 1;
+            }
+        }
     }
 	
     if (Config.EnableSondehub)

@@ -38,6 +38,25 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
         putchar(*payloadptr++);
     }
     putchar('\n');
+
+    #if 0
+    /* Set message to be sent. Right now, uses the existing mechanism that sending through habbase uses
+       TODO: use a queue, but that would mean a lot to be changed */
+    int channel;
+    
+    channel = 0; // TODO: extract from mqtt message: channel 0 or 1, or receive frequency
+    
+    LogMessage("LoRa[%d]: To send '%s'\n", channel, message->payload);
+    strcpy(Config.LoRaDevices[channel].UplinkMessagePlain, message->payload);
+    if (*Config.UplinkCode)
+    {
+        EncryptMessage(Config.UplinkCode, message->payload+1); // TODO: first character must be a special one and be left unencrypted
+    }
+    strcpy(Config.LoRaDevices[channel].UplinkMessage, message->payload);
+
+    // TODO: confirm reception of message send request to client?
+    #endif
+
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
     return 1;
@@ -176,3 +195,45 @@ void *MQTTLoop( mqtt_connect_t *mqttConnection )
     return NULL;
 }
 
+void *MQTTListenerLoop(mqtt_connect_t *mqttConnection) {
+    MQTTClient client;
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    int rc;
+    char address[256];
+
+    sprintf(address, "tcp://%s:%s", mqttConnection->host, mqttConnection->port);
+
+    MQTTClient_create(&client, address, mqttConnection->clientId,
+        MQTTCLIENT_PERSISTENCE_NONE, NULL);
+
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+    conn_opts.username = mqttConnection->user;
+    conn_opts.password = mqttConnection->pass;
+
+    MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
+
+    if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS) {
+        LogMessage("MQTT Listen: Failed to connect, return code %d\n", rc);
+        return NULL;
+    }
+
+    // Suscribirse al topic deseado
+    rc = MQTTClient_subscribe(client, "gateway/commands/#", QOS);
+    if (rc != MQTTCLIENT_SUCCESS) {
+        LogMessage("MQTT Listen: Failed to subscribe, return code %d\n", rc);
+        MQTTClient_disconnect(client, 10000);
+        MQTTClient_destroy(&client);
+        return NULL;
+    }
+
+    // Esperar mensajes indefinidamente (la librería se encarga de recibir)
+    while (true) {
+        sleep(1); // evitar sobrecargar CPU
+    }
+
+    // No se llega aquí normalmente, pero por limpieza:
+    MQTTClient_disconnect(client, 10000);
+    MQTTClient_destroy(&client);
+    return NULL;
+}

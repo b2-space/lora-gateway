@@ -156,7 +156,7 @@ void *MQTTLoop( mqtt_connect_t *mqttConnections[] )
                 /* Iterate through MQTT connections*/
                 while (mqttConnections[i] != NULL)
                 {
-                    free_rx_message &= UploadMQTTPacket(mqttConnection, dequeued_telemetry_ptr);
+                    free_rx_message &= UploadMQTTPacket(mqttConnections[i], dequeued_telemetry_ptr);
                     i++;
                 }
                 if (free_rx_message)

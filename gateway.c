@@ -2489,7 +2489,7 @@ void LoadConfigFile(void)
     RegisterConfigString(MainSection, -1, "MQTTClient", Config.MQTTClient, sizeof(Config.MQTTClient), NULL);
     RegisterConfigString(MainSection, -1, "MQTTTopic", Config.MQTTTopic, sizeof(Config.MQTTTopic), NULL);
 
-    RegisterConfigBoolean(MainSection, -1, "UseMQTT2", &Config.EnableMQTT2, NULL);
+    RegisterConfigBoolean(MainSection, -1, "UseMQTT2", &Config.UseMQTT2, NULL);
     RegisterConfigString(MainSection, -1, "MQTTHost2", Config.MQTTHost2, sizeof(Config.MQTTHost2), NULL);
     RegisterConfigString(MainSection, -1, "MQTTPort2", Config.MQTTPort2, sizeof(Config.MQTTPort2), NULL);
     RegisterConfigString(MainSection, -1, "MQTTUser2", Config.MQTTUser2, sizeof(Config.MQTTUser2), NULL);
@@ -3148,11 +3148,17 @@ int main( int argc, char **argv )
             mqttConnection,
             NULL,
             NULL
-        }
+        };
 
         if (Config.UseMQTT2)
         {
             mqtt_connect_t *mqttConnection2 = malloc(sizeof *mqttConnection);
+            if (!mqttConnection2) {
+                // malloc failed: handle Out-Of-Memory
+                fprintf(stderr, "malloc failed for mqttConnection2\n");
+                free(mqttConnection);
+                return -1;
+            }
 
             strcpy(mqttConnection2->host, Config.MQTTHost2);
             strcpy(mqttConnection2->port, Config.MQTTPort2);
@@ -3161,6 +3167,7 @@ int main( int argc, char **argv )
             strcpy(mqttConnection2->topic, Config.MQTTTopic2);
             strcpy(mqttConnection2->clientId, Config.MQTTClient2);
             mqttConnections[1] = mqttConnection2;
+            mqttConnections[2] = NULL; // ensure sentinel
         }
 
 		if ( pthread_create (&MQTTThread, NULL, MQTTLoop, mqttConnections))

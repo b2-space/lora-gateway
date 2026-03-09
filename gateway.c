@@ -3136,7 +3136,11 @@ int main( int argc, char **argv )
     {
         lifo_buffer_init(&MQTT_Upload_Buffer, 1024);
 		mqtt_connect_t *mqttConnection = malloc(sizeof *mqttConnection);
-
+	
+	if (!mqttConnection) {
+	    fprintf(stderr, "malloc failed for mqttConnection\n");
+	    return -1;  // o manejar el error apropiadamente
+	}
 		strcpy(mqttConnection->host, Config.MQTTHost);
         strcpy(mqttConnection->port, Config.MQTTPort);
         strcpy(mqttConnection->user, Config.MQTTUser);
@@ -3144,11 +3148,17 @@ int main( int argc, char **argv )
         strcpy(mqttConnection->topic, Config.MQTTTopic);
         strcpy(mqttConnection->clientId, Config.MQTTClient);
 
-        mqtt_connect_t *mqttConnections[] = {
-            mqttConnection,
-            NULL,
-            NULL
-        };
+        // Create dynamic array (NOT local) to persist for the thread
+        mqtt_connect_t **mqttConnections = (mqtt_connect_t **)malloc(3 * sizeof(mqtt_connect_t *));
+        if (!mqttConnections) {
+            fprintf(stderr, "malloc failed for mqttConnections\n");
+            free(mqttConnection);
+            return -1;
+        }
+        
+        mqttConnections[0] = mqttConnection;
+        mqttConnections[1] = NULL;
+        mqttConnections[2] = NULL;
 
         if (Config.UseMQTT2)
         {
@@ -3157,6 +3167,7 @@ int main( int argc, char **argv )
                 // malloc failed: handle Out-Of-Memory
                 fprintf(stderr, "malloc failed for mqttConnection2\n");
                 free(mqttConnection);
+                free(mqttConnections);
                 return -1;
             }
 
@@ -3174,6 +3185,10 @@ int main( int argc, char **argv )
 		{
 			fprintf( stderr, "Error creating MQTT thread\n" );
             free(mqttConnection);
+            if (mqttConnections[1]) {
+                free(mqttConnections[1]);
+            }
+            free(mqttConnections);
 			return 1;
 		}
     }

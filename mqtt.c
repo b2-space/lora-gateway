@@ -99,6 +99,10 @@ void BuildMQTTPath(char *topic, mqtt_connect_t * mqttConnection, received_t * t)
 
 bool UploadMQTTPacket(mqtt_connect_t * mqttConnection, received_t * t )
 {
+	if (!mqttConnection || !mqttConnection->host || !mqttConnection->port) {
+	    LogMessage("MQTT: Invalid connection parameters\n");
+	    return false;
+	}
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
@@ -143,7 +147,7 @@ void *MQTTLoop( mqtt_connect_t *mqttConnections[] )
     if ( Config.EnableMQTT )
     {
         received_t *dequeued_telemetry_ptr;
-
+        
         // Keep looping until the parent quits
         while ( true )
         {

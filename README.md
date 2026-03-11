@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 11/03/2026 - V1.12.8
+
+	Forward received data to a second MQTT broker
+
 ## 07/04/2025 - V1.12.7
 
 	Change telemetry log for a CSV with signal quality and 3D distance information.

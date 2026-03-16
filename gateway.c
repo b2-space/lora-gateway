@@ -47,7 +47,7 @@
 #include "gpsusb.h"
 #include "antennatracker.h"
 
-#define VERSION	"V1.12.8"
+#define VERSION	"V1.12.9"
 bool run = TRUE;
 
 // RFM98
@@ -1801,19 +1801,19 @@ int GetTimedMsgToUpload(int Channel, char *Message)
     int Result, FileChannel;
     time_t rawtime;
     struct tm * timeinfo;
-    time_t FileDateTime, CurrentDateTime;
-
-    CurrentDateTime = time(NULL);
+    time_t FileDateTime;
+    char CurrentDateTime[100];
 
     Result = 0;
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(CurrentDateTime, sizeof(CurrentDateTime), "%Y-%m-%d %H:%M:%S", timeinfo); // TODO: REVIEW strftime, CurrentDateTime should be string
+    strftime(CurrentDateTime, sizeof(CurrentDateTime), "%Y-%m-%d %H:%M:%S", timeinfo);
 
     if (Config.UplinkMsgFolder[0])
     {
         // LogMessage("Ch%d: Checking for MSG file in '%s' folder ...\n", Channel, Config.UplinkMsgFolder);
         dp = opendir(Config.UplinkMsgFolder);
+
         if (dp != NULL)
         {
             while ((ep = readdir(dp)) && !Result)
@@ -1826,18 +1826,18 @@ int GetTimedMsgToUpload(int Channel, char *Message)
                     sprintf(FileName, "%s/%s", Config.UplinkMsgFolder, ep->d_name);
                     if ((fp = fopen(FileName, "rt")) != NULL)
                     {
-                        if (fscanf(fp, "%d,%[^,],%[^\r]", &FileChannel, FileDateTimeStr, Line) == 3)
+                        // Format channel;Datetime;Message
+                        // Channel as 0 or 1, Datetime "%Y-%m-%d %H:%M:%S", Message as string without ";"
+                        if (fscanf(fp, "%d;%[^;];%[^\r]", &FileChannel, FileDateTimeStr, Line) == 3)
                         {
                             FileDateTime = to_seconds(FileDateTimeStr);
-                            if (FileChannel == Channel && difftime(FileDateTime, CurrentDateTime) >= 0)
+                            // LogMessage("Msg from %s due in %gs\n", FileName, 0 - difftime(rawtime, FileDateTime));
+                            if (FileChannel == Channel && difftime(rawtime, FileDateTime) > 0)
                             {
+                                Line[strlen(Line)-1] = '\0';
                                 strcpy(Message, Line);
                                 Result = 1;
-                                LogMessage( "Found msg to uplink on time %s for channel %d: %s\n", FileDateTimeStr, FileChannel, Message);
-                                if (*Config.UplinkCode)
-                                {
-                                    EncryptMessage(Config.UplinkCode, Message);
-                                }
+                                // LogMessage("Sending timed msg for channel %d: %s (%d)\n", FileChannel, Message, strlen(Message));
                             }
                         }
                         else
@@ -1943,7 +1943,13 @@ void SendUplinkMessage(int Channel)
     }
     else if (GetTimedMsgToUpload(Channel, Message))
     {
-        SendLoRaData(Channel, Message, strlen(Message));
+        LogMessage("%02d:%02d:%02d Ch%d - Send timed uplink message '%s'\n", tm->tm_hour, tm->tm_min, tm->tm_sec, Channel, Message);
+		LogTelemetryCommand(Channel, Message);
+        if (*Config.UplinkCode)
+        {
+            EncryptMessage(Config.UplinkCode, Message+1);
+        }
+        SendLoRaData(Channel, Message, strlen(Message) + 1); // Don't encode first character '*' (indicates it's a command)
     }
     else if (GetExternalListOfMissingSSDVPackets( Channel, Message))
     {

@@ -350,6 +350,10 @@ Many thanks to David Brooke for coding this feature and the AFC.
 Change History
 ==============
 
+## 16/03/2026 - V1.12.9
+
+	Fixed timed-message uplinks to send uplink messages from *.msg files from a folder to a certain channel/ID
+
 ## 11/03/2026 - V1.12.8
 
 	Forward received data to a second MQTT broker
